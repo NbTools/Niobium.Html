@@ -1,0 +1,13 @@
+﻿body {
+    background-color: white;
+    font-family: "Segoe UI",Arial,Helvetica,sans-serif;
+    font-size: 12px;
+    margin: 4px;
+}
+
+table, th, td {
+    border: 1px solid black;
+    border-collapse: collapse;
+    text-align: left;
+    padding: 2px;
+}
