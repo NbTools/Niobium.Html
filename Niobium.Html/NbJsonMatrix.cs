@@ -21,12 +21,12 @@ public class NbJsonMatrix
 
     public NbJsonMatrix(string[]? predefinedColumns = null, string[]? ignoreColumns = null, Func<object, string?>? converter = null)
     {
-        IgnoreColumns = ignoreColumns ?? Array.Empty<string>();
+        IgnoreColumns = ignoreColumns ?? [];
         ObjConverter = converter;
 
         ObjConverter = converter;
-        Cols = new List<NbJsonMatrixCol>();
-        ConstCols = new Dictionary<string, JProperty?>();
+        Cols = [];
+        ConstCols = [];
         RowsCount = 0;
 
         foreach (var col in predefinedColumns ?? Enumerable.Empty<string>())
@@ -69,7 +69,7 @@ public class NbJsonMatrix
             if (jtoken is not JObject jobj)
                 throw new Exception($"JArray contains {jtoken.GetType().Name}. Only JObjects are supported in {nameof(AddJArray)}");
 
-            List<NbJsonMatrixCell> cells = new();
+            List<NbJsonMatrixCell> cells = [];
             foreach (JToken item in jobj.Children())
             {
                 if (item is not JProperty jprop)
@@ -328,18 +328,11 @@ public class NbJsonMatrix
 
 public record NbJsonMatrixCell(string ColName, JProperty? Content, bool IsHtml);
 
-public class NbJsonMatrixCol
+public class NbJsonMatrixCol(string name, int emptyCells)
 {
-    public string Name { get; private set; }
-    private readonly List<JProperty?> _Cells;
+    public string Name { get; } = name;
+    private readonly List<JProperty?> _Cells = [.. Enumerable.Repeat<JProperty?>(null, emptyCells)];
     public bool IsHtml = false; //Encode by default
-
-    public NbJsonMatrixCol(string name, int emptyCells)
-    {
-        Name = name;
-        _Cells = new List<JProperty?>();
-        _Cells.AddRange(Enumerable.Repeat<JProperty?>(null, emptyCells));
-    }
 
     public override string ToString() => $"{Name} {_Cells.Count}";
 
@@ -352,7 +345,7 @@ public class NbJsonMatrixCol
     {
         bool first = true;
         string? prev = null;
-        foreach (string val in _Cells)
+        foreach (string val in _Cells.Select(c => c?.ToString() ?? String.Empty))
         {
             if (first)
             {
