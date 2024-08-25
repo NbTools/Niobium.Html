@@ -17,6 +17,7 @@ public class NbJsonMatrix
         JsonToHtml.Convert(obj, nbTag);
 
         var html = JsonToHtml.CreateHtml("header", t => JsonToHtml.Convert(obj, t));
+        html = html.Replace("\r\n", "\n");
         Assert.Equal(File.ReadAllText(@"Data/1.html"), html);
     }
 }
