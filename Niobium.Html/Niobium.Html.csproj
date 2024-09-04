@@ -12,10 +12,17 @@
     <PackageIcon>Niobium.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/NbTools/Niobium.Html</RepositoryUrl>
+    <Copyright>Niobium</Copyright>
+    <Description>Package for Html tables generation from JSON or a collection of objects</Description>
+    <AssemblyVersion>1.0.1.0</AssemblyVersion>
+    <FileVersion>1.0.1.0</FileVersion>
+    <Version>1.0.1</Version>
   </PropertyGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Data\Niobium.png" />
+    <EmbeddedResource Include="Niobium.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </EmbeddedResource>
   </ItemGroup>
 
   <ItemGroup>
@@ -53,7 +60,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Data\Niobium.png">
+    <None Update="Niobium.png">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
