@@ -9,7 +9,7 @@ public interface IPropertyHandler
 
 public static class JsonToHtml
 {
-    public static string CreateHtml(string header, Action<Tag> tag) => HtmlTag.CreateHtmlPage(new HtmlParam(header, CssText: File.ReadAllText("nb.css")), tag);
+    public static string CreateHtml(string header, Action<Tag> tag) => HtmlTag.CreateHtmlPage(new HtmlParam(header), tag);
 
     public static void Convert(JToken json, Tag tag, IPropertyHandler? propertyHandler = null, string? propName = null)
     {

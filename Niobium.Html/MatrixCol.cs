@@ -18,18 +18,35 @@ public class MatrixCol : INamed
     public MatrixCol(string name, int emptyCells)
     {
         Name = name;
-        _Cells = new List<string>();
-        _Cells.AddRange(Enumerable.Repeat(String.Empty, emptyCells));
+        _Cells = [.. Enumerable.Repeat(String.Empty, emptyCells)];
     }
 
     public override string ToString() => $"{Name} {_Cells.Count}";
 
-    public ReadOnlyCollection<string> Cells => _Cells.AsReadOnly();
+    public List<string> Cells => _Cells; //TODO: think about making private
     public string this[int ind] => _Cells[ind];
     public void Add(string val) => _Cells.Add(val);
     public int Count => _Cells.Count;
 
-    public bool IsConst() //Are column's values all the same?
+    /// <summary>
+    /// Go throug the column and update the colums. Return null is update is not required
+    /// </summary>
+    /// <param name="updater">Updater function</param>
+    public void UpdateValues(Func<int, string, string?> updater)
+    {
+        for (int i = 0; i < _Cells.Count; i++)
+        {
+            string? res = updater(i, _Cells[i]);
+            if (res != null)
+                _Cells[i] = res;
+        }
+    }
+
+    /// <summary>
+    /// Are column's values all the same?
+    /// </summary>
+    /// <returns></returns>
+    public bool IsConst()
     {
         bool first = true;
         string? prev = null;

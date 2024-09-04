@@ -1,4 +1,6 @@
-﻿namespace Niobium.Html;
+﻿using Niobium.Html.Properties;
+
+namespace Niobium.Html;
 
 public class Tag
 {
@@ -198,6 +200,8 @@ public class Tag
 
 public class HtmlTag : Tag
 {
+    private static string DefaultCss = Resources.DefaultCss;
+
     public HtmlTag(StringBuilder aWr) : base(aWr, null) { }
 
     public static void CreateHtmlPage(string filename, HtmlParam htmlParams, Action<Tag> createContent)
@@ -247,7 +251,12 @@ public class HtmlTag : Tag
                         ["href"] = htmlParams.MbCssFile);*/
 
                     if (!string.IsNullOrEmpty(htmlParams.CssText))
+                    {
+                        if (htmlParams.CssText == "default")
+                            t1.TV("style", htmlParams.CssText == "default" ? DefaultCss : htmlParams.CssText, encode: false);
+
                         t1.TV("style", htmlParams.CssText, encode: false);
+                    }
                 }
                 //.TAV("script", a1 => a1["type", "text/javascript"]["language"] = "javascript", FileInOneLine(@"Data\JavaScript.js"), encode: false)
                 )
@@ -292,7 +301,7 @@ public class HtmlTag : Tag
                         ["href"] = htmlParams.MbCssFile);*/
 
                     if (!string.IsNullOrEmpty(htmlParams.CssText))
-                        t1.TV("style", htmlParams.CssText, encode: false);
+                        t1.TV("style", htmlParams.CssText == "default" ? DefaultCss : htmlParams.CssText, encode: false);
                 }
                 //.TAV("script", a1 => a1["type", "text/javascript"]["language"] = "javascript", FileInOneLine(@"Data\JavaScript.js"), encode: false)
                 )
@@ -306,7 +315,7 @@ public class HtmlTag : Tag
 /// <summary>
 /// Timestamp is used for creating HTML with -N9UEsY ending to prevent problems with caching
 /// </summary>
-public record HtmlParam(string? Title, string? CssText = null, string? CssFile = null, bool DisableCache = false);
+public record HtmlParam(string? Title, string? CssText = "default", string? CssFile = null, bool DisableCache = false);
 
 /*public record HtmlFileName(string? Directory, string? Id, DateTime TimeStamp)
 {
