@@ -4,14 +4,14 @@ namespace Niobium.Html;
 
 public interface IPropertyHandler
 {
-    bool TryHandleProperty(string propName, string? propValue, NbTag tag);
+    bool TryHandleProperty(string propName, string? propValue, Tag tag);
 }
 
 public static class JsonToHtml
 {
-    public static string CreateHtml(string header, Action<NbTag> tag) => HtmlTag.CreateHtmlPage(new HtmlParam(header, CssText: File.ReadAllText("nb.css")), tag);
+    public static string CreateHtml(string header, Action<Tag> tag) => HtmlTag.CreateHtmlPage(new HtmlParam(header, CssText: File.ReadAllText("nb.css")), tag);
 
-    public static void Convert(JToken json, NbTag tag, IPropertyHandler? propertyHandler = null, string? propName = null)
+    public static void Convert(JToken json, Tag tag, IPropertyHandler? propertyHandler = null, string? propName = null)
     {
         if (json is JObject jobj)
         {
@@ -44,7 +44,7 @@ public static class JsonToHtml
             {
                 if (jarr.Children().All(ch => ch.GetType().Name == nameof(JObject)))
                 {   //Only handle the arrays of object with the matrix
-                    NbJsonMatrix nbMatrix = new();
+                    JsonMatrix nbMatrix = new();
                     nbMatrix.AddJArray(jarr);
                     nbMatrix.ToHtml(tag);
                 }
@@ -62,7 +62,7 @@ public static class JsonToHtml
             tag.p($"Unsupported JToken type: {json.GetType().Name}");
     }
 
-    private static bool HandleSpecialValues(JValue jval, NbTag tag)
+    private static bool HandleSpecialValues(JValue jval, Tag tag)
     {
         if (jval.Value is { } vl && vl.ToString() is string str)
         {
@@ -75,7 +75,7 @@ public static class JsonToHtml
         return false;
     }
 
-    private static bool HandleMongoObjects(JObject jobj, NbTag tag)
+    private static bool HandleMongoObjects(JObject jobj, Tag tag)
     {
         if (jobj.Children().Count() != 1)
             return false;

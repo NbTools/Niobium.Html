@@ -4,7 +4,30 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+    <Title>Niobium Html</Title>
+    <Authors>Niobium</Authors>
+    <Company>Niobium</Company>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageIcon>Niobium.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/NbTools/Niobium.Html</RepositoryUrl>
   </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Data\Niobium.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\LICENSE" Link="Data\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
@@ -15,6 +38,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Data\Niobium.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
     <None Update="nb.css">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

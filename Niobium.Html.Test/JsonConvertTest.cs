@@ -6,18 +6,22 @@ namespace Niobium.Html.Test;
 
 public class NbJsonMatrix
 {
-    [Fact]
-    public void Test1()
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void Test1(int ind)
     {
-        string jsonText = File.ReadAllText(@"Data/1.json");
+        string jsonText = File.ReadAllText($@"Data/{ind}.json");
         JObject obj = JsonConvert.DeserializeObject(jsonText) as JObject ?? throw new Exception("Json doesn't contain JObject");
 
         StringBuilder bld = new();
-        var nbTag = NbTag.Create(bld);
+        var nbTag = Tag.Create(bld);
         JsonToHtml.Convert(obj, nbTag);
 
-        var html = JsonToHtml.CreateHtml("header", t => JsonToHtml.Convert(obj, t));
-        html = html.Replace("\r\n", "\n");
-        Assert.Equal(File.ReadAllText(@"Data/1.html"), html);
+        var htmlResult = JsonToHtml.CreateHtml("header", t => JsonToHtml.Convert(obj, t));
+        htmlResult = htmlResult.Replace("\r\n", "\n");
+
+        var htmlCheck = File.ReadAllText($@"Data/{ind}.html").Replace("\r\n", "\n");
+        Assert.Equal(htmlCheck, htmlResult);
     }
 }

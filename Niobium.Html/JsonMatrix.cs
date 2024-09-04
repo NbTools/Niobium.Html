@@ -1,31 +1,25 @@
-﻿using System.Collections.ObjectModel;
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 
 namespace Niobium.Html;
 
-public class NbJsonMatrix
+public class JsonMatrix : MatrixBase<JsonMatrixCol>
 {
     public const string LevelField = "$Lvl";
 
-    public readonly List<NbJsonMatrixCol> Cols;
-    public NbJsonMatrixCol GetColumn(string colName) => Cols.SingleOrDefault(c => c.Name == colName) ?? throw new Exception($"Column '{colName}' was not found in Matrix");
     public readonly Dictionary<string, JProperty?> ConstCols;
-
 
     private readonly string[]? IgnoreColumns;
     private readonly Func<object, string?>? ObjConverter;
 
-
     public int RowsCount { get; private set; }
     public bool Invariant => Cols.All(c => c.Count == RowsCount);
 
-    public NbJsonMatrix(string[]? predefinedColumns = null, string[]? ignoreColumns = null, Func<object, string?>? converter = null)
+    public JsonMatrix(string[]? predefinedColumns = null, string[]? ignoreColumns = null, Func<object, string?>? converter = null)
     {
         IgnoreColumns = ignoreColumns ?? [];
         ObjConverter = converter;
 
         ObjConverter = converter;
-        Cols = [];
         ConstCols = [];
         RowsCount = 0;
 
@@ -34,18 +28,18 @@ public class NbJsonMatrix
 
     }
 
-    public void AddRow(IEnumerable<NbJsonMatrixCell> keyValuePairs)
+    public void AddRow(IEnumerable<MatrixCell<JProperty>> keyValuePairs)
     {
         HashSet<int> remainingCols = new(Enumerable.Range(0, Cols.Count));
 
-        foreach (NbJsonMatrixCell cell in keyValuePairs)
+        foreach (MatrixCell<JProperty> cell in keyValuePairs)
         {
             if (IgnoreColumns?.Contains(cell.ColName) ?? false)
                 continue;
             if (cell.Content is null)
                 continue;
 
-            NbJsonMatrixCol col = GetOrCreateCol(cell.ColName, cell.IsHtml, out var ind);
+            JsonMatrixCol col = GetOrCreateCol(cell.ColName, cell.IsHtml, out var ind);
             if (cell.IsHtml && !col.IsHtml)
                 col.IsHtml = true; //Html may not appear on first line where this column is created, can be set at any point, then is should not be reset back
             remainingCols.Remove(ind);
@@ -69,14 +63,14 @@ public class NbJsonMatrix
             if (jtoken is not JObject jobj)
                 throw new Exception($"JArray contains {jtoken.GetType().Name}. Only JObjects are supported in {nameof(AddJArray)}");
 
-            List<NbJsonMatrixCell> cells = [];
+            List<MatrixCell<JProperty>> cells = [];
             foreach (JToken item in jobj.Children())
             {
                 if (item is not JProperty jprop)
                     throw new Exception($"Only JProperties are supported inside jobj.Children(). The child type was: {item.GetType().Name} in {nameof(AddJArray)}");
 
                 //TODO: Handle complex values
-                cells.Add(new NbJsonMatrixCell(jprop.Name, jprop, IsHtml: false));
+                cells.Add(new MatrixCell<JProperty>(jprop.Name, jprop, IsHtml: false));
 
                 //table.TT("tr", tr => tr.TV("th", jprop.Name).TT("td", td => Convert(jprop.Value, td, propertyHandler, jprop.Name))); //Recursive
 
@@ -95,41 +89,19 @@ public class NbJsonMatrix
     }
 
 
-    private NbJsonMatrixCol GetOrCreateCol(string key, bool isHtml, out int ind)
+    private JsonMatrixCol GetOrCreateCol(string key, bool isHtml, out int ind)
     {
         ind = Cols.FindIndex(c => c.Name == key);
         if (ind != -1)
             return Cols[ind];
 
-        NbJsonMatrixCol newCol = new(key, RowsCount)
+        JsonMatrixCol newCol = new(key, RowsCount)
         {
             IsHtml = isHtml
         };
         Cols.Add(newCol);
         return newCol;
     }
-
-    /*private IEnumerable<NbJsonMatrixCell> GetProps(object obj)
-    {
-        var props = obj.GetType().GetProperties();
-        foreach (PropertyInfo pi in props.Where(p => p.DeclaringType != p.ReflectedType)) //Base class first
-        {
-            object? val = pi.GetValue(obj);
-            (string str, bool raw) = Obj2String(val);
-            yield return new NbJsonMatrixCell(pi.Name, str, raw);
-        }
-        foreach (PropertyInfo pi in props.Where(p => p.DeclaringType == p.ReflectedType)) //Main class second
-        {
-            object? val = null;
-            try
-            {
-                val = pi.GetValue(obj);
-            }
-            catch { } //Ignore
-            (string str, bool raw) = Obj2String(val);
-            yield return new NbJsonMatrixCell(pi.Name, str, raw);
-        }
-    }*/
 
     public (string str, bool raw) Obj2String(object? obj)
     {
@@ -153,7 +125,7 @@ public class NbJsonMatrix
 
     public static (string str, bool raw) Objs2String(IEnumerable<object> objects)
     {
-        NbMatrix matr = new();
+        Matrix matr = new();
         var count = matr.AddManyObjects(objects);
         if (count > 0)
             return (matr.ToHtml(), true);
@@ -188,13 +160,13 @@ public class NbJsonMatrix
     public string ToHtml()
     {
         StringBuilder sb = new();
-        NbTag tag = NbTag.Create(sb);
+        Tag tag = Tag.Create(sb);
         ToHtml(tag);
         return sb.ToString();
     }
 
 
-    public void ToHtml(NbTag t, Func<NbJsonMatrix, int, bool> filter) => t.TT("table", t1 =>
+    public void ToHtml(Tag t, Func<JsonMatrix, int, bool> filter) => t.TT("table", t1 =>
     {
         t.TT("tr", HtmlHeaders);
         for (int i = 0; i < RowsCount; i++)
@@ -205,7 +177,7 @@ public class NbJsonMatrix
     }); //thead tbody
 
 
-    public void ToHtml(NbTag t)
+    public void ToHtml(Tag t)
     {
         t.TT("table", t1 =>
         {
@@ -237,15 +209,15 @@ public class NbJsonMatrix
     }
 
 
-    private void HtmlHeaders(NbTag t)
+    private void HtmlHeaders(Tag t)
     {
-        foreach (NbJsonMatrixCol col in Cols)
+        foreach (JsonMatrixCol col in Cols)
             t.TV("th", col.Name);
     }
 
-    private void HtmlRow(NbTag t, int rowNum)
+    private void HtmlRow(Tag t, int rowNum)
     {
-        foreach (NbJsonMatrixCol col in Cols)
+        foreach (JsonMatrixCol col in Cols)
         {
             JToken? val = col.Cells[rowNum]?.Value;
             if (val != null)
@@ -280,7 +252,7 @@ public class NbJsonMatrix
     {
         if (!Invariant) throw new Exception("FtMatrix Invariant");
 
-        NbJsonMatrixCol? levelCol = null;
+        JsonMatrixCol? levelCol = null;
         var lvlInd = Cols.FindIndex(c => c.Name == LevelField);
         if (lvlInd != -1)
         {
@@ -326,39 +298,4 @@ public class NbJsonMatrix
     #endregion Csv Functionality
 }
 
-public record NbJsonMatrixCell(string ColName, JProperty? Content, bool IsHtml);
-
-public class NbJsonMatrixCol(string name, int emptyCells)
-{
-    public string Name { get; } = name;
-    private readonly List<JProperty?> _Cells = [.. Enumerable.Repeat<JProperty?>(null, emptyCells)];
-    public bool IsHtml = false; //Encode by default
-
-    public override string ToString() => $"{Name} {_Cells.Count}";
-
-    public ReadOnlyCollection<JProperty?> Cells => _Cells.AsReadOnly();
-    public JProperty? this[int ind] => _Cells[ind];
-    public void Add(JProperty? val) => _Cells.Add(val);
-    public int Count => _Cells.Count;
-
-    public bool IsConst() //Are column's values all the same?
-    {
-        bool first = true;
-        string? prev = null;
-        foreach (string val in _Cells.Select(c => c?.ToString() ?? String.Empty))
-        {
-            if (first)
-            {
-                prev = val;
-                first = false;
-            }
-            else
-            {
-                if (prev != val)
-                    return false;
-            }
-        }
-        return true;
-    }
-}
 
