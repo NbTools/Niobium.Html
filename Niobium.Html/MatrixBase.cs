@@ -2,7 +2,7 @@
 
 namespace Niobium.Html;
 
-public class MatrixBase<T> where T : INamed
+public class MatrixBase<T> where T : notnull, INamed
 {
     public readonly List<T> Cols = [];
 
@@ -12,5 +12,6 @@ public class MatrixBase<T> where T : INamed
         return col != null;
     }
 
-    public T GetColumn(string colName) => TryGetColumn(colName, out var col) ? col : throw new Exception($"Column '{colName}' was not found in the Matrix");
+    public T GetColumnFail(string colName) => TryGetColumn(colName, out var col) ? col : throw new Exception($"Column '{colName}' was not found in the Matrix");
+    public T? GetColumn(string colName) => TryGetColumn(colName, out var col) ? col : default;
 }

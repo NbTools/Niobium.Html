@@ -83,7 +83,7 @@ public class JsonMatrix : MatrixBase<JsonMatrixCol>
     {
         get
         {
-            var col = GetColumn(colName);
+            var col = GetColumnFail(colName);
             return col[rowNum];
         }
     }

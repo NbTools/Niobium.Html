@@ -32,7 +32,7 @@ public class MatrixCol : INamed
     /// Go throug the column and update the colums. Return null is update is not required
     /// </summary>
     /// <param name="updater">Updater function</param>
-    public void UpdateValues(Func<int, string, string?> updater)
+    public MatrixCol UpdateValues(Func<int, string, string?> updater)
     {
         for (int i = 0; i < _Cells.Count; i++)
         {
@@ -40,6 +40,7 @@ public class MatrixCol : INamed
             if (res != null)
                 _Cells[i] = res;
         }
+        return this; //For chaining
     }
 
     /// <summary>
@@ -81,7 +82,7 @@ public class MatrixCol : INamed
 
     public HashSet<string> ReplaceByDictInList(Dictionary<string, string> dict, char separator)
     {
-        HashSet<string> nonResolved = new();
+        HashSet<string> nonResolved = [];
 
         for (int i = 0; i < _Cells.Count; i++)
         {
@@ -100,7 +101,7 @@ public class MatrixCol : INamed
 
     public HashSet<string> ReplaceByDictInList(Dictionary<int, string> dict, char separator)
     {
-        HashSet<string> nonResolved = new();
+        HashSet<string> nonResolved = [];
 
         for (int i = 0; i < _Cells.Count; i++)
         {

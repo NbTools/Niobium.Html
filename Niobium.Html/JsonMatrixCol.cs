@@ -19,7 +19,7 @@ public class JsonMatrixCol(string name, int emptyCells) : INamed
     /// Go throug the column and update the colums. Return null is update is not required
     /// </summary>
     /// <param name="updater">Updater function</param>
-    public void UpdateValues(Func<int, JProperty?, JProperty?> updater)
+    public JsonMatrixCol UpdateValues(Func<int, JProperty?, JProperty?> updater)
     {
         for (int i = 0; i < _Cells.Count; i++)
         {
@@ -27,6 +27,7 @@ public class JsonMatrixCol(string name, int emptyCells) : INamed
             if (res != null)
                 _Cells[i] = res;
         }
+        return this;
     }
 
     public bool IsConst() //Are column's values all the same?

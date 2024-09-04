@@ -1,8 +1,5 @@
-﻿using System.Collections.ObjectModel;
-using System.Diagnostics.CodeAnalysis;
-using System.Globalization;
+﻿using System.Globalization;
 using System.Reflection;
-using Newtonsoft.Json.Linq;
 
 namespace Niobium.Html;
 
@@ -14,7 +11,6 @@ public class Matrix : MatrixBase<MatrixCol>
     private readonly string[]? IgnoreColumns;
     private readonly Func<object, string?>? ObjConverter;
 
-
     public int RowsCount { get; private set; }
     public bool Invariant => Cols.All(c => c.Count == RowsCount);
 
@@ -24,7 +20,7 @@ public class Matrix : MatrixBase<MatrixCol>
         ObjConverter = converter;
 
         ObjConverter = converter;
-        ConstCols = new Dictionary<string, string>();
+        ConstCols = [];
         RowsCount = 0;
 
         foreach (var col in predefinedColumns ?? Enumerable.Empty<string>())
@@ -75,23 +71,14 @@ public class Matrix : MatrixBase<MatrixCol>
         RowsCount++;
     }
 
-    internal void AddJArray(JArray jarr)
-    {
-        foreach (JToken jobj in jarr)
-        {
-        }
-    }
-
-
     public string this[string colName, int rowNum]
     {
         get
         {
-            var col = GetColumn(colName);
+            var col = GetColumnFail(colName);
             return col[rowNum];
         }
     }
-
 
     private MatrixCol GetOrCreateCol(string key, bool isHtml, out int ind)
     {

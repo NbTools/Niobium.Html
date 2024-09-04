@@ -200,7 +200,7 @@ public class Tag
 
 public class HtmlTag : Tag
 {
-    private static string DefaultCss = Resources.DefaultCss;
+    private static readonly string DefaultCss = Resources.DefaultCss;
 
     public HtmlTag(StringBuilder aWr) : base(aWr, null) { }
 
