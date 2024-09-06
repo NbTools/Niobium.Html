@@ -216,6 +216,7 @@ public class HtmlTag : Tag
         File.WriteAllText(filename, html);
     }
 
+    //TODO: remove duplication (see below)
     public static Task<string> CreateHtmlPage(HtmlParam htmlParams, Func<Tag, Task> createContent)
     {
         StringBuilder bld = new();
@@ -224,9 +225,10 @@ public class HtmlTag : Tag
 
         bld.AppendLine("<!doctype html>");
         var myT = Niobium.Html.Tag.Create(bld).TT("html", t => t
-            .TAT("head", a1 => a1["title"] = htmlParams.Title ?? "Untitled",
-                t1 =>
+            .TT("head", t1 =>
                 {
+                    if (!String.IsNullOrWhiteSpace(htmlParams.Title))
+                        t1.TV("title", htmlParams.Title);
                     t1.TA("meta", a => a["charset"] = "utf-8");
                     t1.TA("meta", a => a["name", "viewport"]["content"] = "width=device-width, initial-scale=1.0");
 
@@ -273,10 +275,11 @@ public class HtmlTag : Tag
             throw new Exception("CreateContent action was not provided");
 
         bld.AppendLine("<!doctype html>");
-        var myT = Niobium.Html.Tag.Create(bld).TT("html", t => t
-            .TAT("head", a1 => a1["title"] = htmlParams.Title ?? "Untitled",
-                t1 =>
+        Tag myT = Create(bld).TT("html", t => t
+            .TT("head", t1 =>
                 {
+                    if (!String.IsNullOrWhiteSpace(htmlParams.Title))
+                        t1.TV("title", htmlParams.Title);
                     t1.TA("meta", a => a["charset"] = "utf-8");
                     t1.TA("meta", a => a["name", "viewport"]["content"] = "width=device-width, initial-scale=1.0");
 

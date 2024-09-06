@@ -18,8 +18,9 @@ public class NbJsonMatrix
         var nbTag = Tag.Create(bld);
         JsonToHtml.Convert(obj, nbTag);
 
-        var htmlResult = JsonToHtml.CreateHtml("header", t => JsonToHtml.Convert(obj, t));
+        var htmlResult = JsonToHtml.CreateHtml($"Test-{ind}", t => JsonToHtml.Convert(obj, t));
         htmlResult = htmlResult.Replace("\r\n", "\n");
+        //File.WriteAllText($"{ind}.html", htmlResult); Uncomment to re-generate test files
 
         var htmlCheck = File.ReadAllText($@"Data/{ind}.html").Replace("\r\n", "\n");
         Assert.Equal(htmlCheck, htmlResult);
