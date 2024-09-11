@@ -5,7 +5,6 @@ namespace Niobium.Html;
 public class JsonMatrix : MatrixBase<JsonMatrixCol>
 {
     public const string LevelField = "$Lvl";
-
     public readonly Dictionary<string, JProperty?> ConstCols;
 
     private readonly string[]? IgnoreColumns;
@@ -13,11 +12,16 @@ public class JsonMatrix : MatrixBase<JsonMatrixCol>
 
     public int RowsCount { get; private set; }
     public bool Invariant => Cols.All(c => c.Count == RowsCount);
+    private readonly Stack<string> ParentPropNames;
+    private readonly HtmlInterceptor<string?>? HtmlInterceptor;
 
-    public JsonMatrix(string[]? predefinedColumns = null, string[]? ignoreColumns = null, Func<object, string?>? converter = null)
+    public JsonMatrix(string[]? predefinedColumns = null, string[]? ignoreColumns = null, Func<object, string?>? converter = null,
+        Stack<string>? parentPropNames = null, HtmlInterceptor<string?>? htmlInterceptor = null)
     {
         IgnoreColumns = ignoreColumns ?? [];
         ObjConverter = converter;
+        ParentPropNames = parentPropNames ?? new Stack<string>();
+        HtmlInterceptor = htmlInterceptor;
 
         ObjConverter = converter;
         ConstCols = [];
@@ -25,7 +29,6 @@ public class JsonMatrix : MatrixBase<JsonMatrixCol>
 
         foreach (var col in predefinedColumns ?? Enumerable.Empty<string>())
             GetOrCreateCol(col, isHtml: false, out int _);
-
     }
 
     public void AddRow(IEnumerable<MatrixCell<JProperty>> keyValuePairs)
@@ -199,7 +202,16 @@ public class JsonMatrix : MatrixBase<JsonMatrixCol>
                     {
                         t2.TV("td", key);
                         if (val != null)
-                            JsonToHtml.Convert(val, t2, propertyHandler: null, propName: val?.Name); //Recursive
+                        {
+                            ParentPropNames.Push(val.Name);
+                            try
+                            {
+                                JsonObject jObj = new(HtmlInterceptor, ParentPropNames);
+                                jObj.Convert(val, t2); //Recursive
+                            }
+                            finally { ParentPropNames.Pop(); }
+
+                        }
                         else
                             t2.TV("td", String.Empty);
                     });
@@ -221,7 +233,10 @@ public class JsonMatrix : MatrixBase<JsonMatrixCol>
         {
             JToken? val = col.Cells[rowNum]?.Value;
             if (val != null)
-                t.TT("td", t2 => JsonToHtml.Convert(val, t, propertyHandler: null, propName: null));  //TODO: support handler and names
+            {
+                JsonObject jObj = new();
+                t.TT("td", t2 => jObj.Convert(val, t));  //TODO: support handler and names
+            }
             else
                 t.TV("td", String.Empty);
         }
@@ -250,7 +265,7 @@ public class JsonMatrix : MatrixBase<JsonMatrixCol>
 
     public void ToCsv(TextWriter writer)
     {
-        if (!Invariant) throw new Exception("FtMatrix Invariant");
+        if (!Invariant) throw new InvalidOperationException("Matrix Invariant");
 
         JsonMatrixCol? levelCol = null;
         var lvlInd = Cols.FindIndex(c => c.Name == LevelField);

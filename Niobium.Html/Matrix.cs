@@ -1,8 +1,10 @@
-﻿using System.Globalization;
+﻿using System.Diagnostics;
+using System.Globalization;
 using System.Reflection;
 
 namespace Niobium.Html;
 
+[DebuggerDisplay("[{Cols.Count}x{RowsCount}]")]
 public class Matrix : MatrixBase<MatrixCol>
 {
     public const string LevelField = "$Lvl";
@@ -10,22 +12,24 @@ public class Matrix : MatrixBase<MatrixCol>
 
     private readonly string[]? IgnoreColumns;
     private readonly Func<object, string?>? ObjConverter;
+    private readonly HtmlInterceptor<string>? HtmlInterceptor;
+    private readonly Stack<string> ParentPropNames;
 
     public int RowsCount { get; private set; }
     public bool Invariant => Cols.All(c => c.Count == RowsCount);
 
-    public Matrix(string[]? predefinedColumns = null, string[]? ignoreColumns = null, Func<object, string?>? converter = null) :base()
+    public Matrix(string[]? predefinedColumns = null, string[]? ignoreColumns = null,
+        Func<object, string?>? converter = null, Stack<string>? parentPropNames = null, HtmlInterceptor<string>? htmlInterceptor = null) : base()
     {
         IgnoreColumns = ignoreColumns ?? [];
         ObjConverter = converter;
-
-        ObjConverter = converter;
+        HtmlInterceptor = htmlInterceptor;
+        ParentPropNames = parentPropNames ?? new Stack<string>();
         ConstCols = [];
         RowsCount = 0;
 
         foreach (var col in predefinedColumns ?? Enumerable.Empty<string>())
             GetOrCreateCol(col, isHtml: false, out int _);
-
     }
 
     public void AddOneObject<T>(T obj, int level) where T : notnull => AddRow(GetProps(obj).Prepend(new MatrixCell<string>(LevelField, level.ToString(), false)));
@@ -145,7 +149,7 @@ public class Matrix : MatrixBase<MatrixCol>
         else
         {
             Matrix matr = new();
-            int count = matr.AddManyObjects(objects);
+            int _ = matr.AddManyObjects(objects);
             return (matr.ToHtml(), true);
         }
     }
@@ -220,7 +224,6 @@ public class Matrix : MatrixBase<MatrixCol>
         }
     }); //thead tbody
 
-
     public void ToHtml(Tag t)
     {
         t.TT("table", t1 =>
@@ -255,36 +258,57 @@ public class Matrix : MatrixBase<MatrixCol>
     private void HtmlRow(Tag t, int rowNum)
     {
         foreach (MatrixCol col in Cols)
-            t.TV("td", col.Cells[rowNum], encode: !col.IsHtml);
+        {
+            string cellValue = col.Cells[rowNum];
+            t.TT("td", t1 =>
+            {
+                ParentPropNames.Push(col.Name);
+                try
+                {
+                    if (!HtmlInterceptor?.Invoke(ParentPropNames, cellValue, t) ?? true)
+                        t1.Text(cellValue, !col.IsHtml);
+                }
+                finally { ParentPropNames.Pop(); }
+            });
+        }
     }
     #endregion Html Functionality
 
 
     #region Csv Functionality
-    /*public void ReadCsv(string fileName)
+    public void LoadCsv(string csv)
+    {
+        var rdr = new StringReader(csv);
+        LoadCsv(rdr);
+    }
+
+    public void LoadCsv(FileInfo file)
+    {
+        using StreamReader rdr = new(file.FullName);
+        LoadCsv(rdr);
+    }
+
+    public void LoadCsv(TextReader stream)
     {
         StringBuilder bld = new();
-        using StreamReader rdr = new(fileName);
-
         int counter = 0;
-        string[] headers = Array.Empty<string>();
-        while (!rdr.EndOfStream)
+        string[] headers = [];
+        string? line;
+        while ((line = stream.ReadLine()) != null)
         {
             counter++;
-
-            string? line = rdr.ReadLine();
             if (String.IsNullOrWhiteSpace(line))
                 continue;
 
             if (headers.Length == 0) //Headers not read
             {
-                headers = NbExt.DeCsvLine(line, bld, ',', trim: true).ToArray();
+                headers = CsvTool.DeCsvLine(line, bld, ',', trim: true).ToArray();
                 continue;
             }
 
-            AddRow(headers.Zip(NbExt.DeCsvLine(line, bld, ',', trim: true)));
+            AddRow(headers.Zip(CsvTool.DeCsvLine(line, bld, ',', trim: true)));
         }
-    }*/
+    }
 
     public void ToCsv(string fileName)
     {
@@ -306,7 +330,7 @@ public class Matrix : MatrixBase<MatrixCol>
 
     public void ToCsv(TextWriter writer)
     {
-        if (!Invariant) throw new Exception("FtMatrix Invariant");
+        if (!Invariant) throw new InvalidOperationException("Matrix Invariant");
 
         MatrixCol? levelCol = null;
         var lvlInd = Cols.FindIndex(c => c.Name == LevelField);

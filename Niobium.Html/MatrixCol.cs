@@ -13,7 +13,7 @@ public class MatrixCol : INamed
 {
     public string Name { get; private set; }
     private readonly List<string> _Cells;
-    public bool IsHtml = false; //Encode by default
+    public bool IsHtml { get; set; } = false; //Encode by default
 
     public MatrixCol(string name, int emptyCells)
     {
@@ -41,6 +41,12 @@ public class MatrixCol : INamed
                 _Cells[i] = res;
         }
         return this; //For chaining
+    }
+
+    public MatrixCol SetHtml(bool isHtml = true) //Useful for chaining
+    {
+        IsHtml = isHtml;
+        return this;
     }
 
     /// <summary>
