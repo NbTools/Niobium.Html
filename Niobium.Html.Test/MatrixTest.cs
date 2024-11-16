@@ -11,7 +11,7 @@ public class MatrixTest
             Val21,Val22
             """;
 
-        Matrix matrix = new(htmlInterceptor: Intercept);
+        StringMatrix matrix = new(htmlInterceptor: Intercept);
         matrix.LoadCsv(csv);
 
         string html = HtmlTag.CreateHtmlPage(new HtmlParam("Header"), matrix.ToHtml);
@@ -23,7 +23,7 @@ public class MatrixTest
         Assert.Equal("Overriden-Val22", rows[2][1]);
     }
 
-    private static bool Intercept(Stack<string> propName, string propValue, Tag tag)
+    private static bool Intercept(Stack<string> propName, string? propValue, Tag tag)
     {
         if (propName.Match("Col2"))
         {
@@ -36,7 +36,7 @@ public class MatrixTest
     [Fact]
     public void ManipulatingColums()
     {
-        Matrix matrix = new(["Col1", "Col2"]);
+        StringMatrix matrix = new(["Col1", "Col2"]);
 
         Assert.Null(matrix.GetColumn("NonExistant"));
         Assert.Throws<Exception>(() => matrix.GetColumnFail("NonExistant"));

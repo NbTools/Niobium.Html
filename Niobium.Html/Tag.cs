@@ -1,21 +1,13 @@
-﻿using System;
+﻿namespace Niobium.Html;
 
-namespace Niobium.Html;
-
-public class Tag
+public class Tag(StringBuilder aWr, NCss css, string? nameSpace = null, int level = 0)
 {
     private const string IndentMin = "  ";
-    public int Level = 0;
-    private readonly StringBuilder Wr;
-    private readonly string? NameSpace;
-
-    public static Tag Create(StringBuilder wr, string? nameSpace = null) => new(wr, nameSpace);
-
-    protected Tag(StringBuilder aWr, string? nameSpace)
-    {
-        Wr = aWr;
-        NameSpace = nameSpace;
-    }
+    private int Level = level;
+    private int TagCount = 0;
+    private readonly StringBuilder Wr = aWr;
+    private readonly NCss Css = css;
+    private readonly string? NameSpace = nameSpace;
 
     private Tag CreateTag(int aLevel, string tagName, Action<Tag>? Attribs, Action<Tag>? subTags, string? val, bool encode = true)
     {
@@ -23,8 +15,9 @@ public class Tag
             throw new ArgumentException("Illegal tagName " + tagName);
 
         Level = aLevel;
-        Indentation(Wr, Level);
+        Indentation(Level);
 
+        TagCount++;
         Wr.Append('<');
         if (!String.IsNullOrEmpty(NameSpace))
         {
@@ -36,15 +29,18 @@ public class Tag
 
         if (subTags != null)
         {   //Opening a closing tags
-            Wr.AppendLine(">");
+            Wr.Append('>');
 
             if (!String.IsNullOrEmpty(val))
                 throw new ArgumentException("Both subTags and the value provided for tag '{tagName}'");
 
+            int tagsBefore = TagCount;
             Level++;
             subTags(this);  //TODO: this can't return parameters because return parameter is used for chaining
             Level--;        //New lines could be made a responsibility of the code in subTags
-            Indentation(Wr, Level);
+
+            if (TagCount > tagsBefore) //Subtags were created, closing tag is on a new line
+                Indentation(Level);
             ClosingTag(tagName);
         }
         else if (val != null) //Empty string should create opening and closing tags
@@ -55,7 +51,7 @@ public class Tag
         }
         else
         { //Single tag
-            Wr.AppendLine("/>");
+            Wr.Append("/>");
         }
         return this;
     }
@@ -69,17 +65,14 @@ public class Tag
             Wr.Append(':');
         }
         Wr.Append(tagName);
-        Wr.AppendLine(">");
+        Wr.Append('>');
     }
 
-    private static void Indentation(StringBuilder wr, int level)
+    private void Indentation(int level)
     {
-        /*for (int i = level >> 2; i > 0; --i)
-            wr.Append('\t');    //Tabs instead of four spaces
-        if (level % 2 != 0)
-            wr.Append("  ");*/
+        Wr.AppendLine();
         for (int i = level; i > 0; --i) //level % 4
-            wr.Append(IndentMin);
+            Wr.Append(IndentMin);
     }
 
     private Tag Attrib(string attName, string attValue)
@@ -92,9 +85,13 @@ public class Tag
         return this;
     }
 
-    private Tag Cls(NbCssTag cls)
+    private Tag Cls(NCssAttrib? cls)
     {
-        Attrib("class", cls.Name.TrimStart('.'));
+        if (cls != null)
+        {
+            Css.TryAdd(cls);
+            Attrib("class", cls.Name.TrimStart('.'));
+        }
         return this;
     }
 
@@ -149,17 +146,21 @@ public class Tag
     public Tag a(string href, Action<Tag> subTags) => TAT(nameof(a), t => t["href"] = href, subTags);
     public Tag a(string href, string cls, Action<Tag> subTags) => TAT(nameof(a), t => t["href", href]["class"] = cls, subTags);
     public Tag a(string href, string cls, string download, Action<Tag> subTags) => TAT(nameof(a), t => t["href", href]["class", cls]["download"] = download, subTags);
+    public Tag a(string href, NCssAttrib cls, Action<Tag> subTags) => TAT(nameof(a), t => t["href", href].Cls(cls), subTags);
+    public Tag a(string href, NCssAttrib cls, string download, Action<Tag> subTags) => TAT(nameof(a), t => t["href", href].Cls(cls)["download"] = download, subTags);
 
     public Tag br() => Html("<br/>");
 
     public Tag div(Action<Tag> subTags) => CreateTag(Level, nameof(div), null, subTags, null);
     public Tag div(string cls, Action<Tag> subTags) => TAT(nameof(div), t => t["class"] = cls, subTags);
+    public Tag div(NCssAttrib cls, Action<Tag> subTags) => TAT(nameof(div), t => t.Cls(cls), subTags);
 
     public Tag form(string url, Action<Tag> subTags, string method = "post") => TAT(nameof(form), t => t["action", url]["method"] = method, subTags);
 
     //public NbTag img(string src) => TA(nameof(img), t => t["src"] = src);
-    public Tag img(NbCssTag cls) => TA(nameof(img), t => t.Cls(cls));
     public Tag img(string? src = null, string? cls = null) => TA(nameof(img), t => t["src", src]["class"] = cls);
+    public Tag img(NCssAttrib cls) => TA(nameof(img), t => t.Cls(cls));
+    public Tag img(NCssAttrib? cls = null, string? src = null) => TA(nameof(img), t => t["src", src].Cls(cls));
 
     public Tag input(InputType tp, string? name, string? val = null) => TA(nameof(input), t => t["type", tp.ToString().Replace('_', '-')]["name", name]["value"] = val);
     public Tag inputWithLabel(InputType tp, string id, string label)
@@ -180,34 +181,42 @@ public class Tag
 
     public Tag span(string cls, Action<Tag> subTags) => TAT(nameof(span), t => t["class"] = cls, subTags);
     public Tag span(string? cls = null, string? value = null) => TAV(nameof(span), t => t["class"] = cls, value);
+    public Tag span(NCssAttrib cls, Action<Tag> subTags) => TAT(nameof(span), t => t.Cls(cls), subTags);
+    public Tag span(NCssAttrib cls, string? value = null) => TAV(nameof(span), t => t.Cls(cls), value);
 
     public Tag nav(Action<Tag> subTags) => CreateTag(Level, nameof(nav), null, subTags, null);
     public Tag nav(string cls, Action<Tag> subTags) => CreateTag(Level, nameof(nav), t => t["class"] = cls, subTags, null);
+    public Tag nav(NCssAttrib cls, Action<Tag> subTags) => CreateTag(Level, nameof(nav), t => t.Cls(cls), subTags, null);
     public Tag ul(Action<Tag> subTags) => CreateTag(Level, nameof(ul), null, subTags, null);
     public Tag ul(string cls, Action<Tag> subTags) => CreateTag(Level, nameof(ul), t => t["class"] = cls, subTags, null);
+    public Tag ul(NCssAttrib cls, Action<Tag> subTags) => CreateTag(Level, nameof(ul), t => t.Cls(cls), subTags, null);
     public Tag li(Action<Tag> subTags) => CreateTag(Level, nameof(li), null, subTags, null);
     public Tag li(string cls, Action<Tag> subTags) => CreateTag(Level, nameof(li), t => t["class"] = cls, subTags, null);
+    public Tag li(NCssAttrib cls, Action<Tag> subTags) => CreateTag(Level, nameof(li), t => t.Cls(cls), subTags, null);
 
 #pragma warning restore IDE1006 // Naming Styles
 
     public Tag TA(string tagName, Action<Tag> Attribs) => CreateTag(Level, tagName, Attribs, null, null);
     public Tag TT(string tagName, Action<Tag> subTags) => CreateTag(Level, tagName, null, subTags, null);
-    public Tag TV(string tagName, string val, bool encode = true) => CreateTag(Level, tagName, null, null, val, encode);
+    public Tag TV(string tagName, string? val, bool encode = true) => CreateTag(Level, tagName, null, null, val, encode);
 
     public Tag TAT(string tagName, Action<Tag> attribs, Action<Tag> subTags) => CreateTag(Level, tagName, attribs, subTags, null);
     public Tag TAV(string tagName, Action<Tag> attribs, string? val, bool encode = true) => CreateTag(Level, tagName, attribs, null, val, encode);
 
     public Tag T(string tagName) => CreateTag(Level, tagName, null, null, null);
 
-    public Tag Text(string val, bool encode = true)
+    public Tag Text(string? val, bool encode = true)
     {
-        Wr.AppendLine(encode ? System.Net.WebUtility.HtmlEncode(val) : val);
+        if (val != null)
+            Wr.Append(encode ? System.Net.WebUtility.HtmlEncode(val) : val);
         return this;
     }
 
-    public Tag Html(string html)
+    public Tag Html(string html, bool closeOnNewLine = false)
     {
-        Wr.AppendLine(html);
+        Wr.Append(html);
+        if (closeOnNewLine)
+            TagCount++; //Pretend we've created a tag to force closing tag on the new line
         return this;
     }
 }
