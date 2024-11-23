@@ -2,40 +2,42 @@
 
 namespace Niobium.Html;
 
-public delegate bool HtmlInterceptor<T>(Stack<string> propNames, T propValue, Tag tag);
+public delegate bool HtmlInterceptor<T>(Stack<string> propNames, T propValue, IAttr tag);
 
 public class JsonObject(HtmlInterceptor<string?>? HtmlInterceptor = null, Stack<string>? parentPropNames = null)
 {
     private readonly Stack<string> ParentPropNames = parentPropNames ?? new Stack<string>();
 
-    public static string CreateHtml(string header, Action<Tag> tag) => HtmlTag.CreateHtmlPage(new HtmlParam(header), tag);
+    public static string CreateHtml(string header, Func<IAttr, ITag> tag) => HtmlTag.CreateHtmlPage(new HtmlParam(header), tag);
 
-    public void Convert(JToken json, Tag tag)
+    public ITag Convert(JToken json, IAttr tag)
     {
         if (json is JObject jobj)
         {
             if (!HandleMongoObjects(jobj, tag))
-                tag.TT("table", table =>
+                tag.T("table", table =>
                 {
                     foreach (JToken item in jobj.Children())
                     {
                         if (item is JProperty jprop)
                         {
-                            table.TT("tr", tr =>
+                            table.T("tr", tr =>
                             {
-                                tr.TV("th", jprop.Name);
+                                tr.T("th", jprop.Name);
                                 ParentPropNames.Push(jprop.Name);
                                 try
                                 {
                                     JsonObject subObj = new(HtmlInterceptor, ParentPropNames);
-                                    table.TT("td", td => subObj.Convert(jprop.Value, td));
+                                    table.T("td", td => subObj.Convert(jprop.Value, td));
                                 }
                                 finally { ParentPropNames.Pop(); }
+                                return tr;
                             });//Recursive
                         }
                         else
                             throw new Exception($"Only JProperties are supported inside JProperty. The child type: {item.GetType().Name}");
                     }
+                    return table;
                 });
         }
         else if (json is JValue jval)
@@ -63,37 +65,40 @@ public class JsonObject(HtmlInterceptor<string?>? HtmlInterceptor = null, Stack<
                     nbMatrix.ToHtml(tag);
                 }
                 else
-                    tag.TT("table", table =>
+                    tag.T("table", table =>
                     {
                         foreach (JToken jtok in jarr.Children())
                         {
-                            table.TT("tr", tr => tr.TT("td", td =>
+                            table.T("tr", tr => tr.T("td", td =>
                             {
                                 JsonObject subObj = new(HtmlInterceptor, ParentPropNames);
                                 subObj.Convert(jtok, td);
+                                return td;
                             })); //Recursive
                         }
+                        return table;
                     });
             }
         }
         else
-            tag.p($"Unsupported JToken type: {json.GetType().Name}");
+            tag.T("p", $"Unsupported JToken type: {json.GetType().Name}");
+        return tag;
     }
 
-    private static bool HandleSpecialValues(JValue jval, Tag tag)
+    private static bool HandleSpecialValues(JValue jval, IAttr tag)
     {
         if (jval.Value is { } vl && vl.ToString() is string str)
         {
             if (str.StartsWith("data:image"))
             {
-                tag.TA("img", a => a["src", str]["height"] = "200");
+                tag.T("img", a => a["src", str]["height","200"].Empty());
                 return true;
             }
         }
         return false;
     }
 
-    private bool HandleMongoObjects(JObject jobj, Tag tag)
+    private bool HandleMongoObjects(JObject jobj, IAttr tag)
     {
         if (jobj.Children().Count() != 1)
             return false;

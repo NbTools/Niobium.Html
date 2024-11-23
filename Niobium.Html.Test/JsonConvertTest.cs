@@ -16,7 +16,7 @@ public class JsonConvertTest
         Assert.Contains("Overridden", htmlResult);
     }
 
-    private static bool Intercept(Stack<string> propName, string? propValue, Tag tag)
+    private static bool Intercept(Stack<string> propName, string? propValue, IAttr tag)
     {
         if (propName.Match("glossary", "title"))
         {

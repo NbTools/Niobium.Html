@@ -23,7 +23,7 @@ public class MatrixTest
         Assert.Equal("Overriden-Val22", rows[2][1]);
     }
 
-    private static bool Intercept(Stack<string> propName, string? propValue, Tag tag)
+    private static bool Intercept(Stack<string> propName, string? propValue, IAttr tag)
     {
         if (propName.Match("Col2"))
         {

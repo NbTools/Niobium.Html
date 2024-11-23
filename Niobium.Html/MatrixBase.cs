@@ -144,15 +144,15 @@ public abstract class MatrixBase<T> where T : class
 
 
     //https://developer.mozilla.org/en-US/docs/Web/HTML/Element/table
-    public string ToHtml(NCss? css = null)
+    public string ToHtml(NHeader? css = null)
     {
-        StringBuilder sb = new();
-        Tag tag = new(sb, css ?? new NCss());
+        StringWriter sb = new();
+        HTag tag = new(sb, css);
         ToHtml(tag);
         return sb.ToString();
     }
 
-    abstract public void ToHtml(Tag t);
+    abstract public ITag ToHtml(IAttr t);
 
 
 

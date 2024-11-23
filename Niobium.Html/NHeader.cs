@@ -1,10 +1,11 @@
 ﻿namespace Niobium.Html;
 
-public record NCss(Dictionary<string, NCssAttrib> Tags)
+public record NHeader(Dictionary<string, NCssAttrib> Tags, string? CssText = null)
 {
-    public NCss() : this(new Dictionary<string, NCssAttrib>()) { }
-    public NCss(IEnumerable<NCssAttrib> tags) : this(tags.ToDictionary(t => t.Name)) { }
-    public NCss(params NCssAttrib[] tags) : this(tags.ToDictionary(t => t.Name)) { }
+    public NHeader() : this(new Dictionary<string, NCssAttrib>()) { }
+    public NHeader(string css) : this([], css) { }
+    public NHeader(IEnumerable<NCssAttrib> tags) : this(tags.ToDictionary(t => t.Name)) { }
+    public NHeader(params NCssAttrib[] tags) : this(tags.ToDictionary(t => t.Name)) { }
 
     private static readonly NCssAttrib body = new(nameof(body), [
         ( "background-color", "white" ),
@@ -20,8 +21,11 @@ public record NCss(Dictionary<string, NCssAttrib> Tags)
         ( "padding", "2px" ),
     ]);
 
-    public string? GetCss()
+    public string GetCss()
     {
+        if (CssText != null)
+            return CssText;
+
         StringBuilder sb = new(Environment.NewLine);
 
         Tags.TryAdd(body.Name, body);
@@ -33,7 +37,7 @@ public record NCss(Dictionary<string, NCssAttrib> Tags)
             sb.AppendLine();
         }
 
-        return sb.ToString().TrimEnd();
+        return sb.ToString().TrimEnd() + "\r\n"; //TODO: more elegant trimming?
     }
 
     public bool TryAdd(NCssAttrib cls) => Tags.TryAdd(cls.Name, cls);

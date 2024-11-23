@@ -77,53 +77,58 @@ public class StringMatrix(string[]? predefinedColumns = null, string[]? ignoreCo
     #region Html Functionality
 
 
-    public void ToHtml(Tag t, Func<StringMatrix, int, bool> filter) => t.TT("table", t1 =>
+    public void ToHtml(IAttr t, Func<StringMatrix, int, bool> filter) => t.T("table", t1 =>
     {
-        t.TT("tr", HtmlHeaders);
+        t.T("tr", HtmlHeaders);
         for (int i = 0; i < RowsCount; i++)
         {
             if (filter?.Invoke(this, i) == true)
-                t.TT("tr", t2 => HtmlRow(t2, i));
+                t.T("tr", t2 => HtmlRow(t2, i));
         }
+        return t1;
     }); //thead tbody
 
-    public override void ToHtml(Tag t)
+    public override ITag ToHtml(IAttr t)
     {
-        t.TT("table", t1 =>
+        t.T("table", t1 =>
         {
-            t.TT("tr", HtmlHeaders);
+            t.T("tr", HtmlHeaders);
             for (int i = 0; i < RowsCount; i++)
-                t.TT("tr", t2 => HtmlRow(t2, i));
+                t.T("tr", t2 => HtmlRow(t2, i));
+            return t;
         });
 
         if (ConstCols.Count > 0)
         {
-            t.p(" ");
-            t.h2("Constant Headers");
-            t.TT("table", t1 =>
+            t.T("p", " ");
+            t.T("h2", "Constant Headers");
+            t.T("table", t1 =>
             {
-                t.TT("tr", t2 => t2.TV("th", "Name").TV("th", "Value"));
+                t.T("tr", t2 => t2.T("th", "Name").T("th", "Value"));
                 foreach ((string key, string? val) in ConstCols.OrderBy(p => p.Key))
                 {
-                    t.TT("tr", t2 => t2.TV("td", key).TV("td", val));
+                    t.T("tr", t2 => t2.T("td", key).T("td", val ?? String.Empty));
                 }
+                return t1;
             });
         }
+        return t;
     }
 
 
-    private void HtmlHeaders(Tag t)
+    private ITag HtmlHeaders(IAttr t)
     {
         foreach (MatrixCol<string> col in Cols)
-            t.TV("th", col.Name);
+            t.T("th", col.Name);
+        return t;
     }
 
-    private void HtmlRow(Tag t, int rowNum)
+    private ITag HtmlRow(IAttr t, int rowNum)
     {
         foreach (MatrixCol<string> col in Cols)
         {
             string? cellValue = col.Cells[rowNum];
-            t.TT("td", t1 =>
+            t.T("td", t1 =>
             {
                 ParentPropNames.Push(col.Name);
                 try
@@ -132,8 +137,10 @@ public class StringMatrix(string[]? predefinedColumns = null, string[]? ignoreCo
                         t1.Text(cellValue, !col.IsHtml);
                 }
                 finally { ParentPropNames.Pop(); }
+                return t1;
             });
         }
+        return t;
     }
     #endregion Html Functionality
 
