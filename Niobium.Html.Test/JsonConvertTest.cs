@@ -42,4 +42,31 @@ public class JsonConvertTest
         var htmlCheck = File.ReadAllText($@"Data/{ind}.html").Replace("\r\n", "\n");
         Assert.Equal(htmlCheck, htmlResult);
     }
+
+
+    /*[Fact]
+    public void File2Part2_reTest()
+    {
+        string jsonText = """
+         [
+            {
+                "value": "New",
+            "onclick": "CreateNewDoc()"
+            },
+            {
+                "value": "Open",
+            "onclick": "OpenDoc()"
+            },
+            {
+                "value": "Close",
+            "onclick": "CloseDoc()"
+            }
+         ]
+    """;
+        JToken obj = JsonConvert.DeserializeObject(jsonText) as JToken ?? throw new Exception("Json doesn't contain JToken");
+
+        JsonObject jObj = new();
+        var htmlResult = JsonObject.CreateHtml($"Test1", t => jObj.Convert(obj, t));
+        Assert.Contains("Overridden", htmlResult);
+    }*/
 }

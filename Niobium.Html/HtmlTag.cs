@@ -15,15 +15,15 @@ public static class HtmlTag
             throw new Exception("CreateContent action was not provided");
 
         //Run the body first to populate css with Styles provided while creating body
-        NHeader css = htmlParams.NCss ?? new NHeader();
-        HTag bodyTag = new(bldBody, css, 1); //, null, 1
+        NHeader css = htmlParams.NHeader ?? new NHeader();
+        XTag bodyTag = new(bldBody, css, 1); //, null, 1
         bodyTag.T("zzz", createContent);
         string bodyHtml = bldBody.ToString().Replace("<zzz>", String.Empty).Replace("</zzz>", String.Empty);  //TODO: deal later with the fake extra tag
 
         StringWriter bld = new();
         bld.WriteLine("<!doctype html>");
         bld.WriteLine();//TODO: remove later
-        HTag htmlTag = new(bld, css);
+        XTag htmlTag = new(bld, css);
         htmlTag.T("html", t => t
             .T("head", t1 =>
                 {
@@ -39,13 +39,18 @@ public static class HtmlTag
                         t1.T("meta", a => a["http-equiv", "Expires"]["content", "0"].Empty());
                     }
 
+                    foreach (Uri url in css.GetScriptUris())
+                        t.script(url);
+                    foreach (string src in css.GetScriptSources())
+                        t.script(src);
+
                     if (!string.IsNullOrEmpty(htmlParams.CssFile))  //<link rel="stylesheet" href="/lib/w3schools32.css">
                         t1.T("link", a => a["rel", "stylesheet"]["href", htmlParams.CssFile].Empty());
                     else
                     {
                         string? cssText = css.GetCss();
                         if (!string.IsNullOrEmpty(cssText))
-                            t1.T("style", t2 => t2.Text(cssText));  //TODO:  , closeOnNewLine: true
+                            t1.T("style", t2 => t2.Text(cssText, encode: false));  //was closeOnNewLine: true
                     }
 
                     /*if (!String.IsNullOrEmpty(htmlParams.MbCssFile))  //<link rel="stylesheet" href="/lib/w3schools32.css">
@@ -66,7 +71,7 @@ public static class HtmlTag
 /// <summary>
 /// Timestamp is used for creating HTML with -N9UEsY ending to prevent problems with caching
 /// </summary>
-public record HtmlParam(string? Title, NHeader? NCss = null, string? CssText = "default", string? CssFile = null, bool DisableCache = false);
+public record HtmlParam(string? Title, NHeader? NHeader = null, string? CssText = "default", string? CssFile = null, bool DisableCache = false);
 
 public record HtmlFileName(string? Directory, string? Id, DateTime TimeStamp)
 {

@@ -45,6 +45,7 @@ public class JsonMatrix(string[]? predefinedColumns = null, string[]? ignoreColu
 
     public override ITag ToHtml(IAttr t)
     {
+        //The main table - just the headers and the rows
         t.T("table", t1 =>
         {
             t.T("tr", HtmlHeaders);
@@ -53,6 +54,7 @@ public class JsonMatrix(string[]? predefinedColumns = null, string[]? ignoreColu
             return t1;
         });
 
+        //Constant columns - a separate second table, only if ConstCols were calculated
         if (ConstCols.Count > 0)
         {
             t.T("p", " ");

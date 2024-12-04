@@ -2,6 +2,12 @@
 
 public record NHeader(Dictionary<string, NCssAttrib> Tags, string? CssText = null)
 {
+    private readonly Lazy<HashSet<Uri>> ScriptUris = new();
+    private readonly Lazy<List<string>> ScriptSrcs = new();
+
+    public void AddScriptUri(Uri uri) => ScriptUris.Value.Add(uri);
+    public void AddScript(string src) => ScriptSrcs.Value.Add(src);
+
     public NHeader() : this(new Dictionary<string, NCssAttrib>()) { }
     public NHeader(string css) : this([], css) { }
     public NHeader(IEnumerable<NCssAttrib> tags) : this(tags.ToDictionary(t => t.Name)) { }
@@ -28,6 +34,7 @@ public record NHeader(Dictionary<string, NCssAttrib> Tags, string? CssText = nul
 
         StringBuilder sb = new(Environment.NewLine);
 
+        //Default Css
         Tags.TryAdd(body.Name, body);
         Tags.TryAdd(table_th_td.Name, table_th_td);
 
@@ -37,8 +44,11 @@ public record NHeader(Dictionary<string, NCssAttrib> Tags, string? CssText = nul
             sb.AppendLine();
         }
 
-        return sb.ToString().TrimEnd() + "\r\n"; //TODO: more elegant trimming?
+        return sb.ToString().TrimEnd() + Environment.NewLine; //TODO: more elegant trimming?
     }
+
+    public IEnumerable<Uri> GetScriptUris() => ScriptUris.IsValueCreated ? ScriptUris.Value.OrderBy(u => u.OriginalString) : [];
+    public IEnumerable<string> GetScriptSources() => ScriptSrcs.IsValueCreated ? ScriptSrcs.Value : [];
 
     public bool TryAdd(NCssAttrib cls) => Tags.TryAdd(cls.Name, cls);
 }

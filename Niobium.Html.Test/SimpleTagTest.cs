@@ -30,7 +30,7 @@ public class SimpleTagTest
         using StringWriter wrtr = new();
 
         XTag fTag = new(wrtr);
-        ITag resFTag = fTag.T("root", F1, F2, F3, F4);
+        ITag resFTag = fTag.Ts("root", F1, F2, F3, F4);
 
         var stringRes = wrtr.ToString();
         Assert.Equal(fourTagsExample, stringRes); //Doesn't make sense!

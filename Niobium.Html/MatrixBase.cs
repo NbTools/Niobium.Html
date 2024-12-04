@@ -147,7 +147,7 @@ public abstract class MatrixBase<T> where T : class
     public string ToHtml(NHeader? css = null)
     {
         StringWriter sb = new();
-        HTag tag = new(sb, css);
+        XTag tag = new(sb, css ?? new NHeader());
         ToHtml(tag);
         return sb.ToString();
     }
