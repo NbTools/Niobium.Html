@@ -16,8 +16,9 @@ public class BTagTest
         Assert.Equal(res1, stringRes);
     }
 
-    const string res1 = @"<tagname attribute=""attribute_value"">
-  <subtag>SomeText</subtag>
-</tagname>";
-
+    static readonly string res1 = """
+        <tagname attribute="attribute_value">
+          <subtag>SomeText</subtag>
+        </tagname>
+        """.ReplaceLineEndings();
 }

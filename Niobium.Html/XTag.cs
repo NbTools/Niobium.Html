@@ -143,9 +143,9 @@ public partial class XTag(TextWriter wrtr, int level = 0) : IAttr
         if (text == null)
             return this;
 
-        int newLine = text.IndexOf('\n');
+        bool newLine = text.Contains('\n');
 
-        SetSubtags(newLine >= 0 ? TagContents.MultilineText : TagContents.Text);
+        SetSubtags(newLine ? TagContents.MultilineText : TagContents.Text);
         Wr.Write('>'); //Close opening tag before text
         Wr.Write(encode ? System.Net.WebUtility.HtmlEncode(text) : text);
         return this; //TODO: think later - can't add tags after text ? or can we for mixed content?

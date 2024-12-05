@@ -4,7 +4,7 @@ public class SimpleTagTest
 {
 #pragma warning disable IDE0039 //Function variables just for example
 
-    private const string fourTagsExample = """
+    private static readonly string fourTagsExample = """
     <root>
       <t1/>
       <t2 att1="attval"/>
@@ -15,7 +15,7 @@ public class SimpleTagTest
         <subtag/>
       </t4>
     </root>
-    """;
+    """.ReplaceLineEndings();
 
     [Fact]
     public void FourCombinationsAsParams_Tags()
@@ -118,7 +118,7 @@ public class SimpleTagTest
             <t1 at1="val1">
               <empty/>
             </t1>
-            """;
+            """.ReplaceLineEndings();
 
         var stringRes = wrtr.ToString();
         Assert.Equal(expected, stringRes);
@@ -154,7 +154,7 @@ public class SimpleTagTest
             <t1 at1="val1">
               <t2>SomeText</t2>
             </t1>
-            """;
+            """.ReplaceLineEndings();
 
         var stringRes = wrtr.ToString();
         Assert.Equal(expected, stringRes);
@@ -182,7 +182,7 @@ public class SimpleTagTest
                 </t3>
               </t2>
             </t1>
-            """;
+            """.ReplaceLineEndings();
 
         var stringRes = wrtr.ToString();
         Assert.Equal(expected, stringRes);
