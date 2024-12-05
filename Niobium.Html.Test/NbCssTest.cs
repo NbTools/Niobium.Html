@@ -10,7 +10,7 @@ public class NbCssTest
         NHeader hdr = new();
         hdr.AddScriptUri(new Uri("htttp://unpkg.com/htmx.org@2.0.3/dist/htmx.js"));
         hdr.AddScriptUri(new Uri("htttp://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"));
-        hdr.AddScript(Environment.NewLine + File.ReadAllText(@"Data\SetActive.js"));
+        hdr.AddScript(Environment.NewLine + File.ReadAllText("Data/SetActive.js"));
 
         HtmlParam par = new("Title", hdr);
         string res = HtmlTag.CreateHtmlPage(par, t => t.h1("Header").p("parapraph"));

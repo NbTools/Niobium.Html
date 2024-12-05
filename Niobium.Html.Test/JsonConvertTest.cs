@@ -36,10 +36,10 @@ public class JsonConvertTest
 
         JsonObject jObj = new();
         var htmlResult = JsonObject.CreateHtml($"Test-{ind}", t => jObj.Convert(obj, t));
-        htmlResult = htmlResult.Replace("\r\n", "\n");
+        htmlResult = htmlResult.ReplaceLineEndings();
         //File.WriteAllText($"{ind}.html", htmlResult); Uncomment to re-generate test files
 
-        var htmlCheck = File.ReadAllText($@"Data/{ind}.html").Replace("\r\n", "\n");
+        var htmlCheck = File.ReadAllText($@"Data/{ind}.html").ReplaceLineEndings();
         Assert.Equal(htmlCheck, htmlResult);
     }
 
