@@ -77,7 +77,7 @@ public class StringMatrix(string[]? predefinedColumns = null, string[]? ignoreCo
     #region Html Functionality
 
 
-    public void ToHtml(IAttr t, Func<StringMatrix, int, bool> filter) => t.T("table", t1 =>
+    public void ToHtml(XTag t, Func<StringMatrix, int, bool> filter) => t.T("table", t1 =>
     {
         t.T("tr", HtmlHeaders);
         for (int i = 0; i < RowsCount; i++)
@@ -88,7 +88,7 @@ public class StringMatrix(string[]? predefinedColumns = null, string[]? ignoreCo
         return t1;
     }); //thead tbody
 
-    public override ITag ToHtml(IAttr t)
+    public override ITag ToHtml(XTag t)
     {
         t.T("table", t1 =>
         {
@@ -116,14 +116,14 @@ public class StringMatrix(string[]? predefinedColumns = null, string[]? ignoreCo
     }
 
 
-    private ITag HtmlHeaders(IAttr t)
+    private ITag HtmlHeaders(XTag t)
     {
         foreach (MatrixCol<string> col in Cols)
             t.T("th", col.Name);
         return t;
     }
 
-    private ITag HtmlRow(IAttr t, int rowNum)
+    private ITag HtmlRow(XTag t, int rowNum)
     {
         foreach (MatrixCol<string> col in Cols)
         {

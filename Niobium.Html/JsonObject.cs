@@ -2,15 +2,15 @@
 
 namespace Niobium.Html;
 
-public delegate bool HtmlInterceptor<T>(Stack<string> propNames, T propValue, IAttr tag);
+public delegate bool HtmlInterceptor<T>(Stack<string> propNames, T propValue, XTag tag);
 
 public class JsonObject(HtmlInterceptor<string?>? HtmlInterceptor = null, Stack<string>? parentPropNames = null)
 {
     private readonly Stack<string> ParentPropNames = parentPropNames ?? new Stack<string>();
 
-    public static string CreateHtml(string header, Func<IAttr, ITag> tag) => HtmlTag.CreateHtmlPage(new HtmlParam(header), tag);
+    public static Task<string> CreateHtml(string header, Func<XTag, ITag> tag) => HtmlTag.HtmlPage2String(new HtmlParam(header), tag);
 
-    public ITag Convert(JToken json, IAttr tag)
+    public ITag Convert(JToken json, XTag tag)
     {
         if (json is JObject jobj)
         {
@@ -60,7 +60,7 @@ public class JsonObject(HtmlInterceptor<string?>? HtmlInterceptor = null, Stack<
             {
                 if (jarr.Children().All(ch => ch.GetType().Name == nameof(JObject)))
                 {   //Only handle the arrays of object with the matrix
-                    JsonMatrix nbMatrix = new();
+                    JsonMatrix nbMatrix = new(htmlInterceptor: HtmlInterceptor, parentPropNames: ParentPropNames);
                     nbMatrix.AddJArray(jarr);
                     nbMatrix.ToHtml(tag);
                 }
@@ -85,7 +85,7 @@ public class JsonObject(HtmlInterceptor<string?>? HtmlInterceptor = null, Stack<
         return tag;
     }
 
-    private static bool HandleSpecialValues(JValue jval, IAttr tag)
+    private static bool HandleSpecialValues(JValue jval, XTag tag)
     {
         if (jval.Value is { } vl && vl.ToString() is string str)
         {
@@ -98,7 +98,7 @@ public class JsonObject(HtmlInterceptor<string?>? HtmlInterceptor = null, Stack<
         return false;
     }
 
-    private bool HandleMongoObjects(JObject jobj, IAttr tag)
+    private bool HandleMongoObjects(JObject jobj, XTag tag)
     {
         if (jobj.Children().Count() != 1)
             return false;

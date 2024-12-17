@@ -8,7 +8,7 @@ public class JsonMatrix(string[]? predefinedColumns = null, string[]? ignoreColu
 {
     public void AddJArray(JArray jarr) => AddJTokens(jarr);
 
-    internal void AddJTokens(IEnumerable<JToken> tokens)
+    public void AddJTokens(IEnumerable<JToken> tokens)
     {
         foreach (JToken jtoken in tokens)
         {
@@ -32,7 +32,7 @@ public class JsonMatrix(string[]? predefinedColumns = null, string[]? ignoreColu
     }
 
     #region Html Functionality
-    public void ToHtml(IAttr t, Func<JsonMatrix, int, bool> filter) => t.T("table", t1 =>
+    public void ToHtml(XTag t, Func<JsonMatrix, int, bool> filter) => t.T("table", t1 =>
     {
         t.T("tr", HtmlHeaders);
         for (int i = 0; i < RowsCount; i++)
@@ -43,7 +43,7 @@ public class JsonMatrix(string[]? predefinedColumns = null, string[]? ignoreColu
         return t1;
     }); //thead tbody
 
-    public override ITag ToHtml(IAttr t)
+    public override ITag ToHtml(XTag t)
     {
         //The main table - just the headers and the rows
         t.T("table", t1 =>
@@ -90,22 +90,27 @@ public class JsonMatrix(string[]? predefinedColumns = null, string[]? ignoreColu
     }
 
 
-    private ITag HtmlHeaders(IAttr t)
+    private ITag HtmlHeaders(XTag t)
     {
         foreach (MatrixCol<JProperty> col in Cols)
             t.T("th", col.Name);
         return t;
     }
 
-    private ITag HtmlRow(IAttr t, int rowNum)
+    private ITag HtmlRow(XTag t, int rowNum)
     {
         foreach (MatrixCol<JProperty> col in Cols)
         {
             JToken? val = col.Cells[rowNum]?.Value;
             if (val != null)
             {
-                JsonObject jObj = new();
-                t.T("td", t2 => jObj.Convert(val, t));  //TODO: support handler and names
+                ParentPropNames.Push(col.Name);
+                try
+                {
+                    JsonObject jObj = new(HtmlInterceptor, ParentPropNames);
+                    t.T("td", t2 => jObj.Convert(val, t));
+                }
+                finally { ParentPropNames.Pop(); }
             }
             else
                 t.T("td", String.Empty);

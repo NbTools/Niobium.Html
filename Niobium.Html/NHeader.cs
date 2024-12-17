@@ -1,4 +1,7 @@
-﻿namespace Niobium.Html;
+﻿using System.Text.RegularExpressions;
+#pragma warning disable SYSLIB1045 // Convert to 'GeneratedRegexAttribute'.
+
+namespace Niobium.Html;
 
 public record NHeader(Dictionary<string, NCssAttrib> Tags, string? CssText = null)
 {
@@ -50,13 +53,19 @@ public record NHeader(Dictionary<string, NCssAttrib> Tags, string? CssText = nul
     public IEnumerable<Uri> GetScriptUris() => ScriptUris.IsValueCreated ? ScriptUris.Value.OrderBy(u => u.OriginalString) : [];
     public IEnumerable<string> GetScriptSources() => ScriptSrcs.IsValueCreated ? ScriptSrcs.Value : [];
 
-    public bool TryAdd(NCssAttrib cls) => Tags.TryAdd(cls.Name, cls);
+    public bool TryAdd(NCssAttrib cls)
+    {
+        return Tags.TryAdd(cls.Name, cls);
+
+    }
 }
 
-public record NCssAttrib(string Name, Dictionary<string, string> Attributes)
+public record NCssAttrib(string Name, Dictionary<string, string> Attributes, NCssAttrib[] Children)
 {
-    public NCssAttrib(string Name) : this(Name, new Dictionary<string, string>()) { }
-    public NCssAttrib(string Name, IEnumerable<(string key, string val)> attribs) : this(Name, attribs.ToDictionary(p => p.key, p => p.val)) { }
+    public NCssAttrib(string Name) : this(Name, new Dictionary<string, string>(), []) { }
+    public NCssAttrib(string Name, IEnumerable<(string key, string val)> attribs) : this(Name, attribs.ToDictionary(p => p.key, p => p.val), []) { }
+    public NCssAttrib(string Name, IEnumerable<(string key, string val)> attribs, NCssAttrib[] children)
+        : this(Name, attribs.ToDictionary(p => p.key, p => p.val), children) { }
 
     public NCssAttrib this[string name, string val]
     {
@@ -65,6 +74,34 @@ public record NCssAttrib(string Name, Dictionary<string, string> Attributes)
             Attributes.Add(name, val);
             return this;
         }
+    }
+
+    private static readonly Regex cssOuter = new(@"^(.*)\{(.*)\}$");
+    private static readonly Regex cssInner = new(@"[^;]+(?=;[^;]*)");
+
+    public static NCssAttrib Parse(string text)
+    {
+        text = text.Trim().Replace("\r\n", "");
+        Match match = cssOuter.Match(text);
+        if (!match.Success)
+            throw new SmartException($"Can't parse Css: {text}");
+
+        string name = match.Groups[1].Value.Trim();
+        string body = match.Groups[2].Value;
+        MatchCollection matches = cssInner.Matches(body);
+        if (matches.Count == 0)
+            throw new SmartException($"Can't parse Css: {text}");
+
+        IEnumerable<(string, string)> pairs = matches.Select(m =>
+        {
+            string[] pair = m.Value.Split(':');
+            if (pair.Length != 2)
+                throw new SmartException($"Can't parse Css: {text}");
+            else
+                return (pair[0].Trim(), pair[1].Trim());
+        });
+
+        return new NCssAttrib(name, pairs);
     }
 
 #pragma warning disable IDE1006 // Naming Styles - mimich CSS for better readability
@@ -91,5 +128,13 @@ public record NCssAttrib(string Name, Dictionary<string, string> Attributes)
             sb.Append('\t').Append(key).Append(": ").Append(val).AppendLine(";");
 
         sb.AppendLine("}");
+    }
+
+    internal bool AddTo(NHeader css)
+    {
+        bool res = css.TryAdd(this);
+        foreach (var child in Children)
+            child.AddTo(css);
+        return res;
     }
 }

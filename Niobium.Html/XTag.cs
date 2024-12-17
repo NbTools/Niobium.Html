@@ -1,46 +1,34 @@
 ﻿namespace Niobium.Html;
 
 /// <summary>
-/// Interface that allows the coller to create the Attributes and the tags
-/// </summary>
-public interface IAttr : ITag
-{
-    IAttr this[string name, string? val] { get; }
-    ITag Text(string? text, bool encode = true); //Return nothing (Task only)
-    ITag Html(string? html);
-
-    IAttr this[NCssAttrib? cls] { get; } //Maybe could be moved into IHAttr derived from IAttr using generics like XTag<IAttr>  HTag<IHAttr>
-}
-
-/// <summary>
 /// Inteface that allows the caller to only create the Tag, so that the attributes always go first
 /// </summary>
 public interface ITag
 {
     ITag T(string name, string text);
-    ITag T(string name, Func<IAttr, ITag>? sub = null);
-    ITag Ts(string name, params Func<ITag, ITag>[] subs);
+    ITag T(string name, Func<XTag, ITag>? sub = null);
+    ITag Ts(string name, params Func<XTag, ITag>[] subs);
     ITag Empty();
 
 #pragma warning disable IDE1006 // Naming Styles
 
     public ITag a(string href, string text);
-    public ITag a(string href, Func<IAttr, ITag> SubTags);
-    public ITag a(string href, string clsName, Func<IAttr, ITag> SubTags);
-    public ITag a(string href, string clsName, string download, Func<IAttr, ITag> SubTags);
-    public ITag a(string href, NCssAttrib cls, Func<IAttr, ITag> SubTags);
-    public ITag a(string href, NCssAttrib cls, string download, Func<IAttr, ITag> SubTags);
+    public ITag a(string href, Func<XTag, ITag> SubTags);
+    public ITag a(string href, string clsName, Func<XTag, ITag> SubTags);
+    public ITag a(string href, string clsName, string download, Func<XTag, ITag> SubTags);
+    public ITag a(string href, NCssAttrib cls, Func<XTag, ITag> SubTags);
+    public ITag a(string href, NCssAttrib cls, string download, Func<XTag, ITag> SubTags);
 
     public ITag img(string? src = null, string? cls = null);
     public ITag img(NCssAttrib? cls = null, string? src = null);
 
     public ITag br();
 
-    public ITag div(Func<IAttr, ITag> SubTags);
-    public ITag div(string className, Func<IAttr, ITag> SubTags);
-    public ITag div(NCssAttrib cls, Func<IAttr, ITag> SubTags);
+    public ITag div(Func<XTag, ITag> SubTags);
+    public ITag div(string className, Func<XTag, ITag> SubTags);
+    public ITag div(NCssAttrib cls, Func<XTag, ITag> SubTags);
 
-    public ITag form(string url, Func<IAttr, ITag> SubTags, string method = "post");
+    public ITag form(string url, Func<XTag, ITag> SubTags, string method = "post");
 
     public ITag input(InputType tp, string? name, string? val = null);
     public ITag inputWithLabel(InputType tp, string id, string label)
@@ -49,32 +37,32 @@ public interface ITag
         return T(nameof(input), t => t["type", tp.ToString().Replace('_', '-')]["name", id]["id", id]);
     }
 
-    public ITag p(Func<IAttr, ITag> SubTags);
-    public ITag h1(Func<IAttr, ITag> SubTags);
-    public ITag h2(Func<IAttr, ITag> SubTags);
-    public ITag h3(Func<IAttr, ITag> SubTags);
+    public ITag p(Func<XTag, ITag> SubTags);
+    public ITag h1(Func<XTag, ITag> SubTags);
+    public ITag h2(Func<XTag, ITag> SubTags);
+    public ITag h3(Func<XTag, ITag> SubTags);
 
     public ITag p(string text);
     public ITag h1(string text);
     public ITag h2(string text);
     public ITag h3(string text);
 
-    public ITag span(string className, Func<IAttr, ITag> SubTags);
-    public ITag span(NCssAttrib cls, Func<IAttr, ITag> SubTags);
+    public ITag span(string className, Func<XTag, ITag> SubTags);
+    public ITag span(NCssAttrib cls, Func<XTag, ITag> SubTags);
     public ITag span(string? className = null, string? value = null);
     public ITag span(NCssAttrib cls, string? value = null);
 
-    public ITag nav(Func<IAttr, ITag> SubTags);
-    public ITag ul(Func<IAttr, ITag> SubTags);
-    public ITag li(Func<IAttr, ITag> SubTags);
+    public ITag nav(Func<XTag, ITag> SubTags);
+    public ITag ul(Func<XTag, ITag> SubTags);
+    public ITag li(Func<XTag, ITag> SubTags);
 
-    public ITag nav(string className, Func<IAttr, ITag> SubTags);
-    public ITag ul(string className, Func<IAttr, ITag> SubTags);
-    public ITag li(string className, Func<IAttr, ITag> SubTags);
+    public ITag nav(string className, Func<XTag, ITag> SubTags);
+    public ITag ul(string className, Func<XTag, ITag> SubTags);
+    public ITag li(string className, Func<XTag, ITag> SubTags);
 
-    public ITag nav(NCssAttrib cls, Func<IAttr, ITag> SubTags);
-    public ITag ul(NCssAttrib cls, Func<IAttr, ITag> SubTags);
-    public ITag li(NCssAttrib cls, Func<IAttr, ITag> SubTags);
+    public ITag nav(NCssAttrib cls, Func<XTag, ITag> SubTags);
+    public ITag ul(NCssAttrib cls, Func<XTag, ITag> SubTags);
+    public ITag li(NCssAttrib cls, Func<XTag, ITag> SubTags);
 
     public ITag script(Uri uri);
     public ITag script(string script);
@@ -93,7 +81,7 @@ public interface ITag
 /// </summary>
 /// <param name="wrtr"></param>
 /// <param name="level"></param>
-public partial class XTag(TextWriter wrtr, int level = 0) : IAttr
+public partial class XTag(TextWriter wrtr, int level = 0) : ITag
 {
     enum TagContents { None = 0, Subtags = 1, Text = 2, MultilineText = 3 }
 
@@ -103,7 +91,7 @@ public partial class XTag(TextWriter wrtr, int level = 0) : IAttr
     private const string IndentMin = "  ";
     private int Level = level;
 
-    public IAttr this[NCssAttrib? cls]
+    public XTag this[NCssAttrib? cls]
     {
         get
         {
@@ -121,7 +109,7 @@ public partial class XTag(TextWriter wrtr, int level = 0) : IAttr
             SubtagsStack.Push(cont);
     }
 
-    public IAttr this[string name, string? val]
+    public XTag this[string name, string? val]
     {
         get
         {
@@ -169,7 +157,7 @@ public partial class XTag(TextWriter wrtr, int level = 0) : IAttr
     }
 
 
-    public ITag T(string name, Func<IAttr, ITag>? Sub = null)
+    public ITag T(string name, Func<XTag, ITag>? Sub = null)
     {
         SetSubtags(TagContents.Subtags); //SubTags = true; //Set on the recursive call
 
@@ -197,7 +185,7 @@ public partial class XTag(TextWriter wrtr, int level = 0) : IAttr
         return this;
     }
 
-    public ITag Ts(string name, params Func<ITag, ITag>[] subs)
+    public ITag Ts(string name, params Func<XTag, ITag>[] subs)
     {
         SetSubtags(TagContents.Subtags); //SubTags = true; //Set on the recursive call
 

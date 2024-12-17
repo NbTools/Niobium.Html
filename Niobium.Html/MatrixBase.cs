@@ -152,7 +152,7 @@ public abstract class MatrixBase<T> where T : class
         return sb.ToString();
     }
 
-    abstract public ITag ToHtml(IAttr t);
+    abstract public ITag ToHtml(XTag t);
 
 
 

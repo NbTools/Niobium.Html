@@ -1,6 +1,6 @@
 ﻿namespace Niobium.Html.Test;
 
-public class SimpleTagTest
+public class XTagTest
 {
 #pragma warning disable IDE0039 //Function variables just for example
 
@@ -24,7 +24,7 @@ public class SimpleTagTest
         static ITag F1(ITag t) => t.T("t1"); //No attribs, no subtags
         static ITag F2(ITag t) => t.T("t2", t => t["att1", "attval"].Empty()); //No attribs, no subtags
 
-        Func<ITag, ITag> F3 = t => t.T("t3", (IAttr t) => t.T("subtag")); //No attribs, Subtag
+        Func<ITag, ITag> F3 = t => t.T("t3", (XTag t) => t.T("subtag")); //No attribs, Subtag
         Func<ITag, ITag> F4 = t => t.T("t4", t => t["att1", "attval"].T("subtag"));
 
         using StringWriter wrtr = new();
@@ -40,10 +40,10 @@ public class SimpleTagTest
     [Fact]
     public void FourCombinationsAsLocalFunctions()
     {
-        Func<IAttr, ITag> AttribOnly = t => t["att1", "attval"].Empty();
+        Func<XTag, ITag> AttribOnly = t => t["att1", "attval"].Empty();
 
-        static ITag SubtagOnly(IAttr t) => t.T("subtag"); //Local function
-        Func<IAttr, ITag> AttribAndSubtag = t => t["att1", "attval"].T("subtag");
+        static ITag SubtagOnly(XTag t) => t.T("subtag"); //Local function
+        Func<XTag, ITag> AttribAndSubtag = t => t["att1", "attval"].T("subtag");
 
         using StringWriter wrtr = new();
 

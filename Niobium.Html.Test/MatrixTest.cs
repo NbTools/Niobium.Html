@@ -3,7 +3,7 @@
 public class MatrixTest
 {
     [Fact]
-    public void HtmlInterceptor_Test()
+    public async Task HtmlInterceptor_Test()
     {
         const string csv = """
             Col1,Col2
@@ -14,7 +14,7 @@ public class MatrixTest
         StringMatrix matrix = new(htmlInterceptor: Intercept);
         matrix.LoadCsv(csv);
 
-        string html = HtmlTag.CreateHtmlPage(new HtmlParam("Header"), matrix.ToHtml);
+        string html = await HtmlTag.HtmlPage2String(new HtmlParam("Header"), matrix.ToHtml);
         List<HtmlRow> rows = HtmlHelper.ParseTable(html);
 
         Assert.Equal("Val11", rows[1][0]);
@@ -23,7 +23,7 @@ public class MatrixTest
         Assert.Equal("Overriden-Val22", rows[2][1]);
     }
 
-    private static bool Intercept(Stack<string> propName, string? propValue, IAttr tag)
+    private static bool Intercept(Stack<string> propName, string? propValue, XTag tag)
     {
         if (propName.Match("Col2"))
         {
