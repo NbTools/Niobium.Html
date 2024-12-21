@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using System.Reflection;
+using Newtonsoft.Json.Linq;
 
 namespace Niobium.Html;
 
@@ -8,7 +9,6 @@ public class JsonObject(HtmlInterceptor<string?>? HtmlInterceptor = null, Stack<
 {
     private readonly Stack<string> ParentPropNames = parentPropNames ?? new Stack<string>();
 
-    public static Task<string> CreateHtml(string header, Func<XTag, ITag> tag) => HtmlTag.HtmlPage2String(new HtmlParam(header), tag);
 
     public ITag Convert(JToken json, XTag tag)
     {
@@ -85,6 +85,70 @@ public class JsonObject(HtmlInterceptor<string?>? HtmlInterceptor = null, Stack<
         return tag;
     }
 
+    public ITag Convert(object obj, XTag tag)
+    {
+        if (obj is DateTime dt)
+        {
+            tag.Text(dt.ToString());
+            return tag;
+        }
+        if (obj is IDictionary<string, string> str2strDict)
+        {
+            tag.T("table", table =>
+            {
+                foreach ((string name, string val) in str2strDict)
+                {
+                    table.T("tr", tr =>
+                    {
+                        tr.T("th", name);
+                        ParentPropNames.Push(name);
+                        try
+                        {
+                            table.T("td", val);
+                        }
+                        finally { ParentPropNames.Pop(); }
+                        return tr;
+                    });//Recursive
+
+                }
+                return table;
+            });
+        }
+        else
+        {
+            PropertyInfo[] props = obj.GetType().GetProperties();
+            if (props.Length == 0)
+            {
+                tag.Text(obj.ToString());
+                return tag;
+            }
+
+            tag.T("table", table =>
+            {
+                foreach (PropertyInfo propInf in obj.GetType().GetProperties())
+                {
+                    table.T("tr", tr =>
+                    {
+                        tr.T("th", propInf.Name);
+                        ParentPropNames.Push(propInf.Name);
+                        try
+                        {
+                            table.T("td", propInf.GetValue(obj)?.ToString() ?? String.Empty); //Recursion?
+                        }
+                        finally { ParentPropNames.Pop(); }
+                        return tr;
+                    });//Recursive
+
+                }
+                return table;
+            });
+        }
+
+        return tag;
+    }
+
+
+
     private static bool HandleSpecialValues(JValue jval, XTag tag)
     {
         if (jval.Value is { } vl && vl.ToString() is string str)
@@ -100,8 +164,12 @@ public class JsonObject(HtmlInterceptor<string?>? HtmlInterceptor = null, Stack<
 
     private bool HandleMongoObjects(JObject jobj, XTag tag)
     {
-        if (jobj.Children().Count() != 1)
-            return false;
+        int cnt = jobj.Children().Count();
+        if (cnt == 0)
+            return true; //Handle but print nothing
+
+        if (cnt > 1) //Proper table
+            return false; 
 
         if (jobj.Children().First() is not JProperty prop)
             return false;

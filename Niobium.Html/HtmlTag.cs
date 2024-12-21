@@ -1,15 +1,7 @@
-﻿using Niobium.Html.Async;
-
-namespace Niobium.Html;
+﻿namespace Niobium.Html;
 
 public static class HtmlTag
 {
-    public static async Task HtmlPage2File(string filename, HtmlParam htmlParams, Func<XTag, ITag> createContent)
-    {
-        using StreamWriter sw = new(filename);
-        await StreamHtmlPage(sw, htmlParams, createContent);
-    }
-
     public static async Task<string> HtmlPage2String(HtmlParam htmlParams, Func<XTag, ITag> createContent)
     {
         using StringWriter respStream = new();
@@ -27,49 +19,47 @@ public static class HtmlTag
         //Run the body first to populate css with Styles provided while creating body
         NHeader css = htmlParams.NHeader ?? new NHeader();
         XTag bodyTag = new(bldBody, css, 1); //, null, 1
-        bodyTag.T("zzz", createContent);
-        string bodyHtml = bldBody.ToString().Replace("<zzz>", String.Empty).Replace("</zzz>", String.Empty);  //TODO: deal later with the fake extra tag
+        var _ = bodyTag.T("zzz", createContent);
+        string bodyHtml = bldBody.ToString().Replace("<zzz>", String.Empty).Replace("</zzz>", String.Empty).TrimEnd(' ');  //TODO: deal later with the fake extra tag
 
         await bld.WriteLineAsync("<!doctype html>");
         await bld.WriteLineAsync();//TODO: remove later
-        ATag htmlTag = new(bld);
-        await htmlTag.T("html", t => t
-            .HtmlHeader(htmlParams, css)
-            .T("body", bodyHtml, encode: false) //Tag is required to provide inner html properly
-        );
+        XTag htmlTag = new(bld, css);
+        htmlTag.T("html", t =>
+        {
+            t.HtmlHeader(htmlParams, css).T("body", t => t.Text(bodyHtml, encode: false)); //Tag is required to provide inner html properly
+            foreach (string src in css.GetScriptSources())
+                t.script(src);
+            return t;
+        });
     }
 
-
-    //.TT("body", t2 => t2.TAT("div", a2 => a2["id"] = "content", t3 => createContent(t3))
-
-    static Task<IATag> HtmlHeader(this ATag t0, HtmlParam htmlParams, NHeader css) => t0.T("head", async t =>
+    static ITag HtmlHeader(this XTag t0, HtmlParam htmlParams, NHeader css) => t0.T("head", t =>
     {
         if (!string.IsNullOrWhiteSpace(htmlParams.Title))
-            await t.T("title", htmlParams.Title);
-        await t.T("meta", a => a.A("charset", "utf-8").Empty());
-        await t.T("meta", a => a.A("name", "viewport").A("content", "width=device-width, initial-scale=1.0").Empty());
+            t.T("title", htmlParams.Title);
+        t.T("meta", a => a["charset", "utf-8"].Empty());
+        t.T("meta", a => a["name", "viewport"]["content", "width=device-width, initial-scale=1.0"].Empty());
 
         if (htmlParams.DisableCache)
         {
-            await t.T("meta", a => a.A("http-equiv", "Cache-Control").A("content", "no-cache, no-store, must-revalidate").Empty());
-            await t.T("meta", a => a.A("http-equiv", "Pragma").A("content", "no-cache").Empty());
-            await t.T("meta", a => a.A("http-equiv", "Expires").A("content", "0").Empty());
+            t.T("meta", a => a["http-equiv", "Cache-Control"]["content", "no-cache, no-store, must-revalidate"].Empty());
+            t.T("meta", a => a["http-equiv", "Pragma"]["content", "no-cache"].Empty());
+            t.T("meta", a => a["http-equiv", "Expires"]["content", "0"].Empty());
         }
 
         foreach (Uri url in css.GetScriptUris())
-            await t.script(url);
-        foreach (string src in css.GetScriptSources())
-            await t.script(src);
+            t.script(url);
 
         if (!string.IsNullOrEmpty(htmlParams.CssFile))  //<link rel="stylesheet" href="/lib/w3schools32.css">
-            await t.T("link", a => a.A("rel", "stylesheet").A("href", htmlParams.CssFile).Empty());
+            t.T("link", a => a["rel", "stylesheet"]["href", htmlParams.CssFile].Empty());
         else
         {
             string? cssText = css.GetCss();
             if (!string.IsNullOrEmpty(cssText))
-                await t.T("style", t2 => t2.Text(cssText, encode: false));  //was closeOnNewLine: true
+                t.T("style", t2 => t2.Text(cssText, encode: false));  //was closeOnNewLine: true
         }
-        return t;
+        return t0;
         /*if (!String.IsNullOrEmpty(htmlParams.MbCssFile))  //<link rel="stylesheet" href="/lib/w3schools32.css">
             t1.TA("link", a => a["rel", "stylesheet"]
             ["media", "only screen and (-moz-min-device-pixel-ratio: 2), only screen and (-o-min-device-pixel-ratio: 2/1), only screen and (-webkit-min-device-pixel-ratio: 2), only screen and (min-device-pixel-ratio: 2)"]

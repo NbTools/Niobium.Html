@@ -5,55 +5,61 @@ namespace Niobium.Html.Async;
 /// <summary>
 /// Inteface that allows the caller to only create the Tag, so that the attributes always go first
 /// </summary>
-public interface IATag
+public partial interface IATag
 {
-    Task<IATag> T(string name, string text, bool encode = true);
-    Task<IATag> T(string name, Func<ATag, Task<IATag>>? sub = null);
-    Task<IATag> Ts(string name, params Func<IATag, Task<IATag>>[] subs);
-    Task<IATag> Empty();
+    ValueTask<IATag> T(string name, string text, bool encode = true);
+    ValueTask<IATag> T(string name, Func<ATag, ValueTask<IATag>>? sub = null);
+    ValueTask<IATag> Ts(string name, params Func<IATag, ValueTask<IATag>>[] subs);
+    ValueTask<IATag> Text(string? text, bool encode = true);
+    ValueTask<IATag> Empty();
 }
 
 public static class TagExt
 {
-    public static async Task<IATag> T(this Task<IATag> Caller, string name) => await (await Caller).T(name);
-    public static async Task<IATag> T(this Task<ATag>  Caller, string name) => await (await Caller).T(name);
+    public static async ValueTask<IATag> T(this ValueTask<IATag> Caller, string name) => await (await Caller).T(name);
+    public static async ValueTask<IATag> T(this ValueTask<ATag> Caller, string name) => await (await Caller).T(name);
 
-    public static async Task<IATag> T(this Task<IATag> Caller, string name, string text, bool encode = true) => await (await Caller).T(name, text, encode);
-    public static async Task<IATag> T(this Task<ATag>  Caller, string name, string text, bool encode = true) => await (await Caller).T(name, text, encode);
+    public static async ValueTask<IATag> T(this ValueTask<IATag> Caller, string name, string text, bool encode = true) => await (await Caller).T(name, text, encode);
+    public static async ValueTask<IATag> T(this ValueTask<ATag> Caller, string name, string text, bool encode = true) => await (await Caller).T(name, text, encode);
 
-    public static async Task<IATag> T(this Task<IATag> Caller, string name, Func<ATag, Task<IATag>>? sub = null) => await (await Caller).T(name, sub);
-    public static async Task<IATag> T(this Task<ATag>  Caller, string name, Func<ATag, Task<IATag>>? sub = null) => await (await Caller).T(name, sub);
+    public static async ValueTask<IATag> T(this ValueTask<IATag> Caller, string name, Func<ATag, ValueTask<IATag>>? sub = null) => await (await Caller).T(name, sub);
+    public static async ValueTask<IATag> T(this ValueTask<ATag> Caller, string name, Func<ATag, ValueTask<IATag>>? sub = null) => await (await Caller).T(name, sub);
 
-    public static async Task<IATag> Ts(this Task<IATag> Caller, string name, params Func<IATag, Task<IATag>>[] subs) => await (await Caller).Ts(name, subs);
-    public static async Task<IATag> Ts(this Task<ATag>  Caller, string name, params Func<IATag, Task<IATag>>[] subs) => await (await Caller).Ts(name, subs);
+    public static async ValueTask<IATag> Ts(this ValueTask<IATag> Caller, string name, params Func<IATag, ValueTask<IATag>>[] subs) => await (await Caller).Ts(name, subs);
+    public static async ValueTask<IATag> Ts(this ValueTask<ATag> Caller, string name, params Func<IATag, ValueTask<IATag>>[] subs) => await (await Caller).Ts(name, subs);
 
-    public static async Task<IATag> Empty(this Task<IATag> Caller) => await (await Caller).Empty();
-    public static async Task<IATag> Empty(this Task<ATag>  Caller) => await (await Caller).Empty();
+    public static async ValueTask<IATag> Empty(this ValueTask<IATag> Caller) => await (await Caller).Empty();
+    public static async ValueTask<IATag> Empty(this ValueTask<ATag> Caller) => await (await Caller).Empty();
 
-    public static async Task<IATag> Text(this Task<ATag> Caller, string? text, bool encode = true) => await (await Caller).Text(text, encode);
+    public static async ValueTask<IATag> Text(this ValueTask<IATag> Caller, string? text, bool encode = true) => await (await Caller).Text(text, encode);
+    public static async ValueTask<IATag> Text(this ValueTask<ATag> Caller, string? text, bool encode = true) => await (await Caller).Text(text, encode);
 
-    public static async Task<ATag> A(this Task<ATag> Caller, string name, string? val) => await (await Caller).A(name, val);
+    public static async ValueTask<ATag> A(this ValueTask<ATag> Caller, string name, string? val) => await (await Caller).A(name, val);
 }
 
 /// <summary>
-/// Level can be overriden, if the generated XML is supposed to be inserted into already existing XML at certain level
+/// Level can be overridden, if the generated XML is supposed to be inserted into already existing XML at certain level
 /// </summary>
 /// <param name="wrtr"></param>
 /// <param name="level"></param>
-public class ATag(TextWriter wrtr, int level = 0) : IATag
+public partial class ATag : IATag
 {
     enum TagContents { None = 0, Subtags = 1, Text = 2, MultilineText = 3 }
 
-    private readonly TextWriter Wr = wrtr;
-    private readonly Stack<TagContents> SubtagsStack = new();
+    private readonly TextWriter Wr;
+    private readonly Stack<TagContents> SubtagsStack;
 
     private const string IndentMin = "  ";
-    private int Level = level;
+    private int Level;
 
-    public Task<ATag> Cls(NCssAttrib? cls) =>
-        cls == null ? Task.FromResult(this) : A("class", cls.Name.TrimStart('.'));
+    public ATag(TextWriter wrtr, int level = 0)
+    {
+        Wr = wrtr;
+        SubtagsStack = new();
+        Level = level;
+    }
 
-    public async Task<ATag> A(string name, string? val)
+    public async ValueTask<ATag> A(string name, string? val)
     {
         if (val == null)
             return this;
@@ -63,17 +69,9 @@ public class ATag(TextWriter wrtr, int level = 0) : IATag
         return this;
     }
 
+    public ValueTask<IATag> Html(string? html) => Text(html, encode: false);
 
-#pragma warning disable IDE1006 // Naming Styles
-    public Task<IATag> script(Uri uri) => T(nameof(script), t => A("src", uri.OriginalString).Text("")); //Needs closing tag
-    public Task<IATag> script(string script) => T(nameof(script), t => A("type", "text/javascript").Text(script, encode: false));
-#pragma warning restore IDE1006 // Naming Styles
-
-    //public IATag Text(string? v, bool encode = true) => T("dummy", v ?? String.Empty); //TODO: do something about it
-
-    public Task<IATag> Html(string? html) => Text(html, encode: false);
-
-    public async Task<IATag> Text(string? text, bool encode = true)
+    public async ValueTask<IATag> Text(string? text, bool encode = true)
     {
         if (text == null)
             return this;
@@ -86,7 +84,7 @@ public class ATag(TextWriter wrtr, int level = 0) : IATag
         return this; //TODO: think later - can't add tags after text ? or can we for mixed content?
     }
 
-    public async Task<IATag> T(string name, string text, bool encode = true)
+    public async ValueTask<IATag> T(string name, string text, bool encode = true)
     {
         SetSubtags(TagContents.Subtags); //SubTags = true; //Set on the recursive call
 
@@ -104,7 +102,7 @@ public class ATag(TextWriter wrtr, int level = 0) : IATag
     }
 
 
-    public async Task<IATag> T(string name, Func<ATag, Task<IATag>>? Sub = null)
+    public async ValueTask<IATag> T(string name, Func<ATag, ValueTask<IATag>>? Sub = null)
     {
         SetSubtags(TagContents.Subtags); //SubTags = true; //Set on the recursive call
 
@@ -121,8 +119,7 @@ public class ATag(TextWriter wrtr, int level = 0) : IATag
             Assert(res);
             Level--;
 
-            //After attributes and child tags were written
-            await ClosingTagChoice(name);
+            await ClosingTagChoice(name); //After attributes and child tags were written
         }
         else
             await Wr.WriteAsync('/');
@@ -139,7 +136,7 @@ public class ATag(TextWriter wrtr, int level = 0) : IATag
             throw new Exception("Tag is null");
     }
 
-    public async Task<IATag> Ts(string name, params Func<IATag, Task<IATag>>[] Subs)
+    public async ValueTask<IATag> Ts(string name, params Func<IATag, ValueTask<IATag>>[] Subs)
     {
         SetSubtags(TagContents.Subtags); //SubTags = true; //Set on the recursive call
 
@@ -202,13 +199,12 @@ public class ATag(TextWriter wrtr, int level = 0) : IATag
                 await ClosingTag(name); //Closing tag on the new line with indent 
                 break;
 
-            default:
-                throw new InvalidDataException($"Unsupported TagContents: {SubTags}");
+            //default:
+            //    throw new InvalidDataException($"Unsupported TagContents: {SubTags}");
         }
     }
 
-
-    public Task<IATag> Empty() => Task.FromResult<IATag>(this);
+    public ValueTask<IATag> Empty() => ValueTask.FromResult<IATag>(this);
 
     private async Task CloseAndIndent(bool close = true)
     {

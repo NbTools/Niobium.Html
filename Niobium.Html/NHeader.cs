@@ -67,6 +67,9 @@ public record NCssAttrib(string Name, Dictionary<string, string> Attributes, NCs
     public NCssAttrib(string Name, IEnumerable<(string key, string val)> attribs, NCssAttrib[] children)
         : this(Name, attribs.ToDictionary(p => p.key, p => p.val), children) { }
 
+    public string GetName() => Name; //TODO: count references here
+    public override string ToString() => throw new NotImplementedException(nameof(ToString)); //Temporary to make sure only GetName is called
+
     public NCssAttrib this[string name, string val]
     {
         get
@@ -94,11 +97,12 @@ public record NCssAttrib(string Name, Dictionary<string, string> Attributes, NCs
 
         IEnumerable<(string, string)> pairs = matches.Select(m =>
         {
-            string[] pair = m.Value.Split(':');
-            if (pair.Length != 2)
-                throw new SmartException($"Can't parse Css: {text}");
-            else
-                return (pair[0].Trim(), pair[1].Trim());
+            string txt = m.Value;
+            int ind = txt.IndexOf(':');
+            if (ind == -1)
+                throw new SmartException($"Can't find ':' in {text}");
+
+            return (txt[..ind].Trim(), txt[(ind+1)..]);
         });
 
         return new NCssAttrib(name, pairs);

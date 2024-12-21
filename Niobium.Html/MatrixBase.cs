@@ -103,6 +103,8 @@ public abstract class MatrixBase<T> where T : class
         {
             string str => (str, false),
             IEnumerable<object> enObj => Objs2String(enObj),
+            IDictionary<string, string> strDict => Str2StrDict(strDict),  //TODO: support dicts of objects
+            object theObj => TheObj2String(theObj),
             _ => (obj.ToString() ?? String.Empty, false),
         };
     }
@@ -117,6 +119,26 @@ public abstract class MatrixBase<T> where T : class
             return (String.Empty, false);
     }
 
+    public (string str, bool raw) Str2StrDict(IDictionary<string, string> objects)
+    {
+        if (objects.Count == 0)
+            return (String.Empty, false);
+
+        JsonObject jObj = new(HtmlInterceptor, ParentPropNames);
+        using StringWriter stream = new();
+        XTag bodyTag = new(stream); //, null, 1
+        jObj.Convert(objects, bodyTag);
+        return (stream.ToString(), true);
+    }
+
+    public (string str, bool raw) TheObj2String(object obj)
+    {
+        JsonObject jObj = new(HtmlInterceptor, ParentPropNames);
+        using StringWriter stream = new();
+        XTag bodyTag = new(stream); //, null, 1
+        jObj.Convert(obj, bodyTag);
+        return (stream.ToString(), true);
+    }
 
     public void ConstantColumnsToFile(string fileName) => File.WriteAllLines(fileName, ConstCols.Select(p => p.Key + ',' + p.Value));
 

@@ -20,14 +20,14 @@ public class ATagTest
     """.ReplaceLineEndings();
 
     [Fact]
-    public async void FourCombinationsAsParams_Tags()
+    public async Task FourCombinationsAsParams_Tags()
     {
         //Local functions
-        static Task<IATag> F1(IATag t) => t.T("t1"); //No attribs, no subtags
-        static Task<IATag> F2(IATag t) => t.T("t2", t => t.A("att1", "attval").Empty()); //No attribs, no subtags
+        static ValueTask<IATag> F1(IATag t) => t.T("t1"); //No attribs, no subtags
+        static ValueTask<IATag> F2(IATag t) => t.T("t2", t => t.A("att1", "attval").Empty()); //No attribs, no subtags
 
-        Func<IATag, Task<IATag>> F3 = t => t.T("t3", (ATag t) => t.T("subtag")); //No attribs, Subtag
-        Func<IATag, Task<IATag>> F4 = t => t.T("t4", t => t.A("att1", "attval").T("subtag"));
+        Func<IATag, ValueTask<IATag>> F3 = t => t.T("t3", (ATag t) => t.T("subtag")); //No attribs, Subtag
+        Func<IATag, ValueTask<IATag>> F4 = t => t.T("t4", t => t.A("att1", "attval").T("subtag"));
 
         using StringWriter wrtr = new();
 
@@ -40,12 +40,12 @@ public class ATagTest
 
 
     [Fact]
-    public async void FourCombinationsAsLocalFunctions()
+    public async Task FourCombinationsAsLocalFunctions()
     {
-        Func<ATag, Task<IATag>> AttribOnly = t => t.A("att1", "attval").Empty();
+        Func<ATag, ValueTask<IATag>> AttribOnly = t => t.A("att1", "attval").Empty();
 
-        static Task<IATag> SubtagOnly(ATag t) => t.T("subtag"); //Local function
-        Func<ATag, Task<IATag>> AttribAndSubtag = t => t.A("att1", "attval").T("subtag");
+        static ValueTask<IATag> SubtagOnly(ATag t) => t.T("subtag"); //Local function
+        Func<ATag, ValueTask<IATag>> AttribAndSubtag = t => t.A("att1", "attval").T("subtag");
 
         using StringWriter wrtr = new();
 
@@ -67,7 +67,7 @@ public class ATagTest
 #pragma warning restore IDE0039 // Use local function
 
     [Fact]
-    public async void FourCombinations_IntoFile()
+    public async Task FourCombinations_IntoFile()
     {
         string tempFile = Path.GetTempFileName();
         try
@@ -201,5 +201,34 @@ public class ATagTest
         var stringRes = wrtr.ToString();
         Assert.Equal(expected, stringRes);
     }
+
+    [Fact]
+    public async Task Test()
+    {
+        using StringWriter wrtr = new();
+        ATag fTag = new(wrtr);
+        await fTag.T("div", "Text").Text(null);
+
+        string expected = "<div>Text</div>";
+
+        var stringRes = wrtr.ToString();
+        Assert.Equal(expected, stringRes);
+    }
+
+
+    [Fact]
+    public async Task Test2()
+    {
+        using StringWriter wrtr = new();
+        IHtmlTag fTag = new AHtmlTag(wrtr);
+        await fTag.T("div", "Text");
+        await fTag.a("href", "link");
+
+        string expected = """<div>Text</div><a href="href">link</a>""";
+
+        var stringRes = wrtr.ToString();
+        Assert.Equal(expected, stringRes);
+    }
+
 }
 //.Tag("t2", text: "SomeText")

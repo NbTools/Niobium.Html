@@ -9,6 +9,7 @@ public interface ITag
     ITag T(string name, Func<XTag, ITag>? sub = null);
     ITag Ts(string name, params Func<XTag, ITag>[] subs);
     ITag Empty();
+    ITag Text(string? text = null, bool encode = true);
 
 #pragma warning disable IDE1006 // Naming Styles
 
@@ -126,15 +127,18 @@ public partial class XTag(TextWriter wrtr, int level = 0) : ITag
 
     public ITag Html(string? html) => Text(html, encode: false);
 
-    public ITag Text(string? text, bool encode = true)
+    public ITag Text(string? text = null, bool encode = true)
     {
         if (text == null)
-            return this;
+            text = String.Empty; //Created closing tag
+
+        bool isTop = SubtagsStack.Count == 0;
 
         bool newLine = text.Contains('\n');
-
         SetSubtags(newLine ? TagContents.MultilineText : TagContents.Text);
-        Wr.Write('>'); //Close opening tag before text
+
+        if (!isTop)
+            Wr.Write('>'); //Close opening tag before text
         Wr.Write(encode ? System.Net.WebUtility.HtmlEncode(text) : text);
         return this; //TODO: think later - can't add tags after text ? or can we for mixed content?
     }

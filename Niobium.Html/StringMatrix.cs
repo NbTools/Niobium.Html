@@ -4,6 +4,9 @@ using System.Reflection;
 
 namespace Niobium.Html;
 
+[AttributeUsage(AttributeTargets.Property)]
+public class MatrixIgnoreAttribute : Attribute { }
+
 [DebuggerDisplay("[{Cols.Count}x{RowsCount}]")]
 public class StringMatrix(string[]? predefinedColumns = null, string[]? ignoreColumns = null, Func<object, string?>? converter = null,
     Stack<string>? parentPropNames = null, HtmlInterceptor<string?>? htmlInterceptor = null)
@@ -32,6 +35,9 @@ public class StringMatrix(string[]? predefinedColumns = null, string[]? ignoreCo
         foreach (PropertyInfo pi in props.Where(p => p.DeclaringType != p.ReflectedType)
             .Concat(props.Where(p => p.DeclaringType == p.ReflectedType))) //Base class first, Main class second
         {
+            if (pi.GetCustomAttributes().OfType<MatrixIgnoreAttribute>().Any())
+                continue;
+
             string str;
             bool raw = false;
             try

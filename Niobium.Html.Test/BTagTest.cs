@@ -1,16 +1,17 @@
-﻿namespace Niobium.Html.Test;
+﻿using System.Text;
+
+namespace Niobium.Html.Test;
 
 public class BTagTest
 {
     [Fact]
     public void Test1()
     {
-        StringWriter bld = new();
+        StringBuilder bld = new();
 
         NTag t = new(bld);
-        t.TAT("tagname",
-            a => a.Attrib("attribute", "attribute_value"),
-            t => t.TV("subtag", "SomeText"));
+        t.T("tagname", [("attribute", "attribute_value")],
+            t => t.T("subtag", "SomeText"));
 
         var stringRes = bld.ToString().Trim();
         Assert.Equal(res1, stringRes);
